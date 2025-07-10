@@ -109,12 +109,12 @@ class WeatherAPIService {
     }
     
     private func parseWeatherData(_ data: Data) throws -> WeatherData {
-        let response = try decoder.decode(WeatherAPIResponse.self, from: data)
+        let response = try decoder.decode(WeatherAPIResponseDTO.self, from: data)
         let weatherData = try updateOrCreateWeatherData(for: response)
         return weatherData
     }
-    
-    private func updateOrCreateWeatherData(for response: WeatherAPIResponse) throws -> WeatherData {
+
+    private func updateOrCreateWeatherData(for response: WeatherAPIResponseDTO) throws -> WeatherData {
         let fetchRequest: NSFetchRequest<WeatherData> = WeatherData.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "city == %@", response.name)
         
