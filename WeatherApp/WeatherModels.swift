@@ -46,10 +46,21 @@ struct ForecastAPIResponse: Codable {
         
         struct Main: Codable {
             let temp: Double
+            let tempMin: Double
+            let tempMax: Double
+            let humidity: Int
+            
+            enum CodingKeys: String, CodingKey {
+                case temp
+                case tempMin = "temp_min"
+                case tempMax = "temp_max"
+                case humidity
+            }
         }
         
         struct Weather: Codable {
             let main: String
+            let description: String
         }
     }
 }

@@ -12,35 +12,64 @@ struct HomeView: View {
     var weather: WeatherData
     var topEdge: CGFloat
     @State var offset: CGFloat = 0
+    @State private var selectedDate = Date()
+    @EnvironmentObject private var weatherManager: WeatherManager
     
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 15) {
-                weatherHeader
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 15) {
+                    weatherHeader
+                
+                    if !weatherManager.isForecastLoaded {
+                                        ProgressView()
+                                            .padding(.vertical, 10)
+                                    }
+                    else if !availableDates.isEmpty {
+                                       DaySelectionView(selectedDate: $selectedDate, availableDates: availableDates)
+                                   }
                 
                 CustomStackView {
                     Text("HOURLY FORECAST")
                 } contentView: {
-                    hourlyForecastView
+                    HourlyForecastView(hourlyData: filteredHourlyData)
                 }
                 
                 CustomStackView {
                     Text("DAILY FORECAST")
                 } contentView: {
-                    dailyForecastView
+                    DailyForecastView(dailyData: Array(weather.dailyForecast as? Set<DailyForecast> ?? []))
                 }
                 
                 CustomStackView {
                     Text("WEATHER DETAILS")
                 } contentView: {
-                    weatherDetailsView
+                    WeatherDetailsView(weather: weather)
                 }
             }
             .padding(.horizontal)
             .padding(.bottom, 20)
-            .background(geometryReader)
         }
         .background(backgroundGradient)
+        .onAppear {
+            selectedDate = Date() // Устанавливаем текущую дату по умолчанию
+        }
+    }
+    
+    private var filteredHourlyData: [HourlyForecast] {
+        guard let hourly = weather.hourlyForecast as? Set<HourlyForecast> else { return [] }
+        return hourly.filter {
+            Calendar.current.isDate($0.timeDate ?? Date(), inSameDayAs: selectedDate)
+        }.sorted {
+            ($0.timeDate ?? Date.distantPast) < ($1.timeDate ?? Date.distantPast)
+        }
+    }
+    
+    private var availableDates: [Date] {
+        guard let hourly = weather.hourlyForecast as? Set<HourlyForecast> else { return [] }
+        
+        let dates = hourly.compactMap { $0.timeDate }
+        let uniqueDates = Array(Set(dates.map { Calendar.current.startOfDay(for: $0) }))
+        return uniqueDates.sorted()
     }
     
     private var weatherHeader: some View {
@@ -71,119 +100,12 @@ struct HomeView: View {
         .offset(y: offset > 0 ? (offset / 1.5) : 0)
     }
     
-    private var hourlyForecastView: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 15) {
-                ForEach(Array(weather.hourlyForecast as? Set<HourlyForecast> ?? []).prefix(12), id: \.self) { hour in
-                    VStack(spacing: 8) {
-                        Text(hour.time ?? "--:--")
-                            .font(.caption)
-                        Image(systemName: hour.icon ?? "questionmark")
-                            .symbolRenderingMode(.multicolor)
-                            .font(.title2)
-                        Text("\(Int(hour.temp))°")
-                            .font(.headline)
-                    }
-                    .foregroundColor(.white)
-                    .frame(width: 60)
-                }
-            }
-            .padding(.vertical, 5)
-        }
-    }
-    
-    private var dailyForecastView: some View {
-        VStack(spacing: 15) {
-            ForEach(Array(weather.dailyForecast as? Set<DailyForecast> ?? []).prefix(7), id: \.self) { day in
-                HStack(spacing: 15) {
-                    Text(dayName(for: day.date))
-                        .font(.subheadline)
-                        .frame(width: 80, alignment: .leading)
-                    
-                    Image(systemName: day.icon ?? "questionmark")
-                        .symbolRenderingMode(.multicolor)
-                        .frame(width: 24)
-                    
-                    Spacer()
-                    
-                    Text("\(Int(day.lowTemp))°")
-                        .frame(width: 36, alignment: .trailing)
-                    
-                    temperatureRangeView(lowTemp: day.lowTemp, highTemp: day.highTemp)
-                        .frame(maxWidth: 100)
-                    
-                    Text("\(Int(day.highTemp))°")
-                        .frame(width: 36, alignment: .leading)
-                }
-                .foregroundColor(.white)
-                .padding(.vertical, 5)
-                
-                if day != Array(weather.dailyForecast as? Set<DailyForecast> ?? []).prefix(7).last {
-                    Divider()
-                        .background(Color.white.opacity(0.5))
-                }
-            }
-        }
-    }
-    
-    private func temperatureRangeView(lowTemp: Double, highTemp: Double) -> some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .frame(height: 4)
-                    .foregroundColor(.white.opacity(0.3))
-                
-                let range = highTemp - lowTemp
-                let normalizedRange = min(max(range / 30, 0), 1)
-                
-                Capsule()
-                    .frame(width: proxy.size.width * normalizedRange, height: 4)
-                    .foregroundColor(.white)
-                    .offset(x: proxy.size.width * (lowTemp / 30))
-            }
-        }
-        .frame(height: 4)
-    }
-    
-    private var weatherDetailsView: some View {
-        VStack(spacing: 15) {
-            DetailRow(icon: "humidity", title: "HUMIDITY", value: "\(weather.humidity)%")
-            Divider()
-                .background(Color.white.opacity(0.5))
-            DetailRow(icon: "wind", title: "WIND", value: "\(String(format: "%.1f", weather.windSpeed)) mph")
-            Divider()
-                .background(Color.white.opacity(0.5))
-            DetailRow(icon: "thermometer", title: "PRESSURE", value: "1012 hPa")
-        }
-        .padding(.vertical, 5)
-    }
-    
-    private var geometryReader: some View {
-        GeometryReader { proxy -> Color in
-            let minY = proxy.frame(in: .global).minY
-            
-            DispatchQueue.main.async {
-                self.offset = minY
-            }
-            
-            return Color.clear
-        }
-    }
-    
     private var backgroundGradient: some View {
         LinearGradient(gradient: Gradient(colors: [
             Color(red: 0.1, green: 0.3, blue: 0.7),
             Color(red: 0.3, green: 0.1, blue: 0.5)
         ]), startPoint: .topLeading, endPoint: .bottomTrailing)
         .ignoresSafeArea()
-    }
-    
-    private func dayName(for date: Date?) -> String {
-        guard let date = date else { return "N/A" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        formatter.locale = Locale.current
-        return formatter.string(from: date).capitalized
     }
     
     private func getTitleOpacity() -> Double {

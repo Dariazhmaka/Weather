@@ -9,19 +9,19 @@ import SwiftUI
 import CoreLocation
 
 struct ContentView: View {
-    @StateObject private var locationManager = LocationManager()
+    @EnvironmentObject private var weatherManager: WeatherManager
     @Environment(\.managedObjectContext) private var viewContext
     @State private var showSearch = false
     
     var body: some View {
         ZStack {
-            if let weather = locationManager.currentWeather {
+            if let weather = weatherManager.currentWeather {
                 HomeView(weather: weather, topEdge: 0)
                     .environment(\.managedObjectContext, viewContext)
             } else {
                 LoadingView()
                     .onAppear {
-                        locationManager.requestLocation()
+                        weatherManager.fetchWeather()
                     }
             }
             
@@ -34,7 +34,10 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $showSearch) {
-            SearchView(locationManager: locationManager)
+            SearchView(locationManager: weatherManager)
+        }
+        .onChange(of: weatherManager.currentWeather) { oldValue, newValue in
+            weatherManager.isForecastLoaded = false
         }
     }
     

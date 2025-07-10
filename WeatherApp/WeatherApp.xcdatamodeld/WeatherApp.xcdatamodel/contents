@@ -12,6 +12,7 @@
         <attribute name="icon" optional="YES" attributeType="String"/>
         <attribute name="temp" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="time" optional="YES" attributeType="String"/>
+        <attribute name="timeDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="weatherData" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="WeatherData" inverseName="hourlyForecast" inverseEntity="WeatherData"/>
     </entity>
     <entity name="WeatherData" representedClassName="WeatherData" syncable="YES" codeGenerationType="class">

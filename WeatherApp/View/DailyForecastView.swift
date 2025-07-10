@@ -18,61 +18,59 @@ struct DailyForecastView: View {
     }()
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("DAILY FORECAST")
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.7))
-                .padding(.bottom, 4)
-            
-            ForEach(dailyData, id: \.self) { day in
-                dailyForecastRow(for: day)
+        VStack(spacing: 15) {
+            ForEach(sortedDailyForecast.prefix(7), id: \.self) { day in
+                HStack(spacing: 15) {
+                    Text(dayName(for: day.date))
+                        .font(.subheadline)
+                        .frame(width: 80, alignment: .leading)
+                    
+                    Image(systemName: day.icon ?? "questionmark")
+                        .symbolRenderingMode(.multicolor)
+                        .frame(width: 24)
+                    
+                    Spacer()
+                    
+                    Text("\(Int(day.lowTemp))°")
+                        .frame(width: 36, alignment: .trailing)
+                    
+                    temperatureRangeView(lowTemp: day.lowTemp, highTemp: day.highTemp)
+                        .frame(maxWidth: 100)
+                    
+                    Text("\(Int(day.highTemp))°")
+                        .frame(width: 36, alignment: .leading)
+                }
+                .foregroundColor(.white)
+                .padding(.vertical, 5)
+                
+                if day != sortedDailyForecast.prefix(7).last {
+                    Divider()
+                        .background(Color.white.opacity(0.5))
+                }
             }
         }
-        .padding(12)
-        .background(Color.white.opacity(0.2))
-        .cornerRadius(12)
-        .padding(.horizontal)
     }
     
-    private func dailyForecastRow(for day: DailyForecast) -> some View {
-        HStack(spacing: 12) {
-            Text(dayName(for: day.date))
-                .font(.subheadline)
-                .frame(width: 80, alignment: .leading)
-            
-            Image(systemName: day.icon ?? "questionmark")
-                .symbolRenderingMode(.multicolor)
-                .frame(width: 24)
-            
-            Spacer()
-            
-            Text("\(Int(day.lowTemp))°")
-                .frame(width: 36, alignment: .trailing)
-            
-            temperatureRangeView(lowTemp: day.lowTemp, highTemp: day.highTemp)
-                .frame(maxWidth: 100)
-            
-            Text("\(Int(day.highTemp))°")
-                .frame(width: 36, alignment: .leading)
+    private var sortedDailyForecast: [DailyForecast] {
+        dailyData.sorted {
+            ($0.date ?? Date.distantPast) < ($1.date ?? Date.distantPast)
         }
-        .foregroundColor(.white)
-        .padding(.vertical, 6)
     }
     
     private func temperatureRangeView(lowTemp: Double, highTemp: Double) -> some View {
-        GeometryReader { geometry in
+        GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 Capsule()
                     .frame(height: 4)
                     .foregroundColor(.white.opacity(0.3))
                 
                 let range = highTemp - lowTemp
-                let normalizedRange = min(max(range / 30, 0), 1) 
+                let normalizedRange = min(max(range / 30, 0), 1)
                 
                 Capsule()
-                    .frame(width: geometry.size.width * normalizedRange, height: 4)
+                    .frame(width: proxy.size.width * normalizedRange, height: 4)
                     .foregroundColor(.white)
-                    .offset(x: geometry.size.width * (lowTemp / 30))
+                    .offset(x: proxy.size.width * (lowTemp / 30))
             }
         }
         .frame(height: 4)

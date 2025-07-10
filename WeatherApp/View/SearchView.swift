@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct SearchView: View {
-    @ObservedObject var locationManager: LocationManager
+    @ObservedObject var locationManager: WeatherManager
     @State private var searchText = ""
+    @State private var latitude = ""
+    @State private var longitude = ""
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
@@ -17,12 +19,35 @@ struct SearchView: View {
             VStack {
                 SearchBar(text: $searchText, placeholder: "Search for a city")
                     .padding()
+                
+                // Поля для ввода координат
+                VStack(spacing: 10) {
+                    TextField("Latitude", text: $latitude)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .keyboardType(.numbersAndPunctuation)
+                    
+                    TextField("Longitude", text: $longitude)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .keyboardType(.numbersAndPunctuation)
+                    
+                    Button("Search by Coordinates") {
+                        if let lat = Double(latitude), let lon = Double(longitude) {
+                            locationManager.fetchWeather(latitude: lat, longitude: lon)
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                    }
+                    .disabled(latitude.isEmpty || longitude.isEmpty)
+                    .padding()
+                }
+                .padding()
+                
                 List {
                     currentLocationButton
                     
                     ForEach(filteredCities, id: \.self) { city in
                         Button(action: {
-                            selectCity(city)
+                            locationManager.fetchWeather(for: city)
+                            presentationMode.wrappedValue.dismiss()
                         }) {
                             Text(city)
                         }
