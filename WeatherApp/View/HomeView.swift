@@ -13,20 +13,20 @@ struct HomeView: View {
     var topEdge: CGFloat
     @State var offset: CGFloat = 0
     @State private var selectedDate = Date()
-    @EnvironmentObject private var weatherManager: WeatherManager
+    @EnvironmentObject private var weatherManager: WeatherManager // Исправлено
     
     var body: some View {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 15) {
-                    weatherHeader
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 15) {
+                weatherHeader
                 
-                    if !weatherManager.isForecastLoaded {
-                                        ProgressView()
-                                            .padding(.vertical, 10)
-                                    }
-                    else if !availableDates.isEmpty {
-                                       DaySelectionView(selectedDate: $selectedDate, availableDates: availableDates)
-                                   }
+                if weatherManager.isForecastLoaded == false { // Теперь должно работать
+                    ProgressView()
+                        .padding(.vertical, 10)
+                }
+                else if !availableDates.isEmpty {
+                    DaySelectionView(selectedDate: $selectedDate, availableDates: availableDates)
+                }
                 
                 CustomStackView {
                     Text("HOURLY FORECAST")
@@ -51,7 +51,7 @@ struct HomeView: View {
         }
         .background(backgroundGradient)
         .onAppear {
-            selectedDate = Date() // Устанавливаем текущую дату по умолчанию
+            selectedDate = Date()
         }
     }
     

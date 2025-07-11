@@ -6,22 +6,19 @@
 //
 
 import Foundation
-import CoreData
-
-import Foundation
-import CoreData
 import CoreLocation
+import CoreData
 import Combine
 
 class WeatherManager: ObservableObject {
-    private let apiService: WeatherAPIService
-    private let locationService = LocationService()
-    private var cancellables = Set<AnyCancellable>()
-    
     @Published var currentWeather: WeatherData?
-    @Published var isForecastLoaded = false
     @Published var isLoading = false
     @Published var error: Error?
+    @Published var isForecastLoaded = false
+    
+    private let apiService: WeatherAPIService
+    private var cancellables = Set<AnyCancellable>()
+    public let locationService = LocationService()
     
     init(context: NSManagedObjectContext) {
         self.apiService = WeatherAPIService(context: context)
@@ -29,40 +26,69 @@ class WeatherManager: ObservableObject {
     }
     
     func fetchWeather() {
-        isLoading = true
-        locationService.requestLocation()
-    }
-    
-    func fetchWeather(latitude: Double, longitude: Double) {
-        isLoading = true
-        apiService.fetchWeather(latitude: latitude, longitude: longitude) { [weak self] result in
-            self?.handleWeatherResult(result)
-            self?.fetchForecast(latitude: latitude, longitude: longitude)
+        if let location = locationService.currentLocation {
+            fetchWeather(latitude: location.coordinate.latitude,
+                       longitude: location.coordinate.longitude)
+        } else {
+            fetchWeather(for: "London")
         }
     }
     
-    func fetchWeather(for city: String) {
+    func fetchWeather(latitude: Double, longitude: Double) {
+        resetState()
         isLoading = true
-        apiService.fetchWeather(for: city) { [weak self] result in
-            if case .success(let weatherData) = result {
-                self?.handleWeatherResult(result)
-                self?.fetchForecast(latitude: weatherData.latitude, longitude: weatherData.longitude)
-            } else {
+        
+        apiService.fetchWeather(latitude: latitude, longitude: longitude) { [weak self] result in
+            DispatchQueue.main.async {
                 self?.handleWeatherResult(result)
             }
         }
     }
     
-    func fetchForecast(latitude: Double, longitude: Double) {
-        apiService.fetchForecast(latitude: latitude, longitude: longitude) { [weak self] result in
+    func fetchWeather(for city: String) {
+        resetState()
+        isLoading = true
+        
+        apiService.fetchWeather(for: city) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.handleWeatherResult(result)
+            }
+        }
+    }
+    
+    private func resetState() {
+        isLoading = true
+        error = nil
+        currentWeather = nil
+        isForecastLoaded = false
+    }
+    
+    private func handleWeatherResult(_ result: Result<WeatherData, Error>) {
+        isLoading = false
+        
+        switch result {
+        case .success(let weatherData):
+            currentWeather = weatherData
+            error = nil
+            fetchForecast(for: weatherData)
+        case .failure(let error):
+            self.error = error
+            currentWeather = nil
+            isForecastLoaded = false
+        }
+    }
+    
+    private func fetchForecast(for weatherData: WeatherData) {
+        apiService.fetchForecast(latitude: weatherData.latitude,
+                               longitude: weatherData.longitude) { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
-                case .success:
+                case .success():
                     self?.isForecastLoaded = true
                 case .failure(let error):
                     self?.error = error
+                    self?.isForecastLoaded = false
                 }
-                self?.isLoading = false
             }
         }
     }
@@ -75,21 +101,14 @@ class WeatherManager: ObservableObject {
                                   longitude: location.coordinate.longitude)
             }
             .store(in: &cancellables)
-    }
-    
-    private func handleWeatherResult(_ result: Result<WeatherData, Error>) {
-            DispatchQueue.main.async { [weak self] in
-                switch result {
-                case .success(let weatherData):
-                    self?.currentWeather = weatherData
-                    self?.error = nil
-                    // Автоматически загружаем прогноз при успешном получении погоды
-                    self?.fetchForecast(latitude: weatherData.latitude, longitude: weatherData.longitude)
-                case .failure(let error):
-                    self?.error = error
-                    self?.currentWeather = nil
+        
+        locationService.$authorizationStatus
+            .sink { [weak self] status in
+                if status == .denied || status == .restricted {
+                    self?.error = NSError(domain: "Location permission denied", code: 0)
+                    self?.isLoading = false
                 }
-                self?.isLoading = false
             }
-        }
+            .store(in: &cancellables)
     }
+}

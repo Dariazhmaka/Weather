@@ -10,8 +10,8 @@ import Combine
 
 class LocationService: NSObject, ObservableObject {
     private let locationManager = CLLocationManager()
-    @Published var authorizationStatus: CLAuthorizationStatus
     @Published var currentLocation: CLLocation?
+    @Published var authorizationStatus: CLAuthorizationStatus
     
     override init() {
         authorizationStatus = locationManager.authorizationStatus
@@ -25,18 +25,9 @@ class LocationService: NSObject, ObservableObject {
         case .notDetermined:
             locationManager.requestWhenInUseAuthorization()
         case .authorizedWhenInUse, .authorizedAlways:
-            locationManager.startUpdatingLocation()
+            locationManager.requestLocation()
         default:
             break
-        }
-    }
-    
-    func reverseGeocode(latitude: Double, longitude: Double, completion: @escaping (String?) -> Void) {
-        let location = CLLocation(latitude: latitude, longitude: longitude)
-        let geocoder = CLGeocoder()
-        
-        geocoder.reverseGeocodeLocation(location) { placemarks, error in
-            completion(placemarks?.first?.locality ?? placemarks?.first?.country)
         }
     }
 }

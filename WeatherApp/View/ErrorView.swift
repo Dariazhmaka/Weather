@@ -9,31 +9,16 @@ import SwiftUI
 
 struct ErrorView: View {
     let error: Error
-    var retryAction: (() -> Void)?
+    let retryAction: () -> Void
     
     var body: some View {
         VStack {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.largeTitle)
-                .foregroundColor(.yellow)
-            Text("Error loading data")
-                .font(.headline)
-                .foregroundColor(.white)
+            Text("Error occurred")
+                .font(.title)
             Text(error.localizedDescription)
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.8))
-                .multilineTextAlignment(.center)
                 .padding()
-            if let retryAction = retryAction {
-                Button("Try Again") {
-                    retryAction()
-                }
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(8)
-            }
+            Button("Retry", action: retryAction)
+                .buttonStyle(.borderedProminent)
         }
-        .padding()
     }
 }

@@ -8,52 +8,80 @@
 import SwiftUI
 
 struct SearchView: View {
-    @ObservedObject var locationManager: WeatherManager
+    @ObservedObject var weatherManager: WeatherManager
     @State private var searchText = ""
     @State private var latitude = ""
     @State private var longitude = ""
     @Environment(\.presentationMode) var presentationMode
     
+    private let sampleCities = [
+        "New York", "London", "Paris", "Tokyo", "Berlin",
+        "Moscow", "Sydney", "Dubai", "Singapore", "Shanghai",
+        "Rome", "Madrid", "Toronto", "Chicago", "Los Angeles"
+    ]
+    
+    private var filteredCities: [String] {
+        searchText.isEmpty ? sampleCities : sampleCities.filter { $0.lowercased().contains(searchText.lowercased()) }
+    }
+    
     var body: some View {
         NavigationView {
-            VStack {
+            VStack(spacing: 15) {
                 SearchBar(text: $searchText, placeholder: "Search for a city")
-                    .padding()
+                    .padding(.horizontal)
                 
-                // Поля для ввода координат
+                // Current Location Button
+                Button(action: useCurrentLocation) {
+                    HStack {
+                        Image(systemName: "location.fill")
+                        Text("Use Current Location")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue.opacity(0.2))
+                    .cornerRadius(10)
+                }
+                .padding(.horizontal)
+                
+                // Coordinates Search
                 VStack(spacing: 10) {
-                    TextField("Latitude", text: $latitude)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.numbersAndPunctuation)
+                    Text("Or search by coordinates:")
+                        .font(.caption)
                     
-                    TextField("Longitude", text: $longitude)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.numbersAndPunctuation)
-                    
-                    Button("Search by Coordinates") {
-                        if let lat = Double(latitude), let lon = Double(longitude) {
-                            locationManager.fetchWeather(latitude: lat, longitude: lon)
-                            presentationMode.wrappedValue.dismiss()
-                        }
+                    HStack {
+                        TextField("Latitude", text: $latitude)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.numbersAndPunctuation)
+                        
+                        TextField("Longitude", text: $longitude)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.numbersAndPunctuation)
                     }
+                    .padding(.horizontal)
+                    
+                    Button(action: searchByCoordinates) {
+                        Text("Search by Coordinates")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .padding(.horizontal)
                     .disabled(latitude.isEmpty || longitude.isEmpty)
-                    .padding()
                 }
-                .padding()
                 
+                // Cities List
                 List {
-                    currentLocationButton
-                    
-                    ForEach(filteredCities, id: \.self) { city in
-                        Button(action: {
-                            locationManager.fetchWeather(for: city)
-                            presentationMode.wrappedValue.dismiss()
-                        }) {
-                            Text(city)
+                    Section(header: Text("Popular Cities")) {
+                        ForEach(filteredCities, id: \.self) { city in
+                            Button(action: { searchByCity(city) }) {
+                                Text(city)
+                            }
                         }
                     }
                 }
-                .listStyle(PlainListStyle())
+                .listStyle(InsetGroupedListStyle())
             }
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.inline)
@@ -67,36 +95,22 @@ struct SearchView: View {
         }
     }
     
-    private var currentLocationButton: some View {
-        Button(action: {
-            locationManager.fetchWeather()
-            presentationMode.wrappedValue.dismiss()
-        }) {
-            HStack {
-                Image(systemName: "location.fill")
-                Text("Use current location")
-            }
-        }
-    }
-    
-    private func selectCity(_ city: String) {
-        locationManager.fetchWeather(for: city)
+    private func useCurrentLocation() {
+        weatherManager.locationService.requestLocation()
         presentationMode.wrappedValue.dismiss()
     }
     
-    private var filteredCities: [String] {
-        if searchText.isEmpty {
-            return sampleCities
-        } else {
-            return sampleCities.filter { $0.lowercased().contains(searchText.lowercased()) }
-        }
+    private func searchByCity(_ city: String) {
+        weatherManager.fetchWeather(for: city)
+        presentationMode.wrappedValue.dismiss()
     }
     
-    private let sampleCities = [
-        "New York", "London", "Paris", "Tokyo", "Berlin",
-        "Moscow", "Sydney", "Dubai", "Singapore", "Shanghai",
-        "Rome", "Madrid", "Toronto", "Chicago", "Los Angeles"
-    ]
+    private func searchByCoordinates() {
+        if let lat = Double(latitude), let lon = Double(longitude) {
+            weatherManager.fetchWeather(latitude: lat, longitude: lon)
+            presentationMode.wrappedValue.dismiss()
+        }
+    }
 }
 
 struct SearchBar: UIViewRepresentable {

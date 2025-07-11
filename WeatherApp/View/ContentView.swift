@@ -6,53 +6,49 @@
 //
 
 import SwiftUI
-import CoreLocation
 
 struct ContentView: View {
-    @EnvironmentObject private var weatherManager: WeatherManager
-    @Environment(\.managedObjectContext) private var viewContext
-    @State private var showSearch = false
+    @EnvironmentObject var weatherManager: WeatherManager
+    @State private var showingSearch = false
     
     var body: some View {
-        ZStack {
-            if let weather = weatherManager.currentWeather {
-                HomeView(weather: weather, topEdge: 0)
-                    .environment(\.managedObjectContext, viewContext)
-            } else {
-                LoadingView()
-                    .onAppear {
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if weatherManager.isLoading {
+                    LoadingView()
+                } else if let error = weatherManager.error {
+                    ErrorView(error: error) {
                         weatherManager.fetchWeather()
                     }
+                } else if let weather = weatherManager.currentWeather {
+                    HomeView(weather: weather, topEdge: 0)
+                        .environmentObject(weatherManager)
+                } else {
+                    VStack {
+                        Text("Welcome to WeatherApp")
+                            .font(.title)
+                        Button("Get Weather") {
+                            weatherManager.fetchWeather()
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .foregroundColor(.white)
+                }
             }
             
-            VStack {
-                HStack {
-                    Spacer()
-                    searchButton
-                }
-                Spacer()
+            Button(action: { showingSearch = true }) {
+                Image(systemName: "magnifyingglass")
+                    .padding(10)
+                    .background(Color.white.opacity(0.2))
+                    .clipShape(Circle())
             }
+            .padding()
         }
-        .sheet(isPresented: $showSearch) {
-            SearchView(locationManager: weatherManager)
+        .sheet(isPresented: $showingSearch) {
+            SearchView(weatherManager: weatherManager)
         }
-        .onChange(of: weatherManager.currentWeather) { oldValue, newValue in
-            weatherManager.isForecastLoaded = false
+        .onAppear {
+            weatherManager.fetchWeather()
         }
-    }
-    
-    private var searchButton: some View {
-        Button(action: {
-            showSearch.toggle()
-        }) {
-            Image(systemName: "magnifyingglass")
-                .font(.title2)
-                .foregroundColor(.white)
-                .padding()
-                .background(Color.white.opacity(0.2))
-                .clipShape(Circle())
-        }
-        .padding(.trailing)
-        .padding(.top, 50)
     }
 }

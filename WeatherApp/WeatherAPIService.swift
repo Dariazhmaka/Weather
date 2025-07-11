@@ -13,33 +13,23 @@ class WeatherAPIService {
     private let baseUrl = "https://api.openweathermap.org/data/2.5"
     private let context: NSManagedObjectContext
     
-    private let decoder: JSONDecoder = {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return decoder
-    }()
-    
     init(context: NSManagedObjectContext) {
         self.context = context
     }
     
     func fetchWeather(latitude: Double, longitude: Double, completion: @escaping (Result<WeatherData, Error>) -> Void) {
-        let urlString = "\(baseUrl)/weather?lat=\(latitude)&lon=\(longitude)&appid=\(apiKey)&units=metric&lang=en"
-        performRequest(urlString: urlString, completion: completion)
+        let urlString = "\(baseUrl)/weather?lat=\(latitude)&lon=\(longitude)&appid=\(apiKey)&units=metric"
+        performWeatherRequest(urlString: urlString, completion: completion)
     }
     
     func fetchWeather(for city: String, completion: @escaping (Result<WeatherData, Error>) -> Void) {
-        guard let encodedCity = city.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
-            completion(.failure(APIError.invalidCityName))
-            return
-        }
-        
-        let urlString = "\(baseUrl)/weather?q=\(encodedCity)&appid=\(apiKey)&units=metric&lang=en"
-        performRequest(urlString: urlString, completion: completion)
+        let encodedCity = city.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? city
+        let urlString = "\(baseUrl)/weather?q=\(encodedCity)&appid=\(apiKey)&units=metric"
+        performWeatherRequest(urlString: urlString, completion: completion)
     }
     
     func fetchForecast(latitude: Double, longitude: Double, completion: @escaping (Result<Void, Error>) -> Void) {
-        let urlString = "\(baseUrl)/forecast?lat=\(latitude)&lon=\(longitude)&appid=\(apiKey)&units=metric&cnt=40"
+        let urlString = "\(baseUrl)/forecast?lat=\(latitude)&lon=\(longitude)&appid=\(apiKey)&units=metric"
         
         guard let url = URL(string: urlString) else {
             completion(.failure(APIError.invalidURL))
@@ -52,23 +42,14 @@ class WeatherAPIService {
                 return
             }
             
-            guard let data = data, let self = self else {
+            guard let data = data else {
                 completion(.failure(APIError.noData))
                 return
             }
             
             do {
-                let forecastResponse = try self.decoder.decode(ForecastAPIResponse.self, from: data)
-                
-                let fetchRequest: NSFetchRequest<WeatherData> = WeatherData.fetchRequest()
-                fetchRequest.predicate = NSPredicate(format: "latitude == %lf AND longitude == %lf", latitude, longitude)
-                
-                if let weatherData = try self.context.fetch(fetchRequest).first {
-                    try self.updateHourlyForecasts(for: weatherData, with: forecastResponse)
-                    try self.updateDailyForecasts(for: weatherData, with: forecastResponse)
-                    try self.context.save()
-                }
-                
+                let response = try JSONDecoder().decode(ForecastAPIResponseDTO.self, from: data)
+                try self?.processForecastResponse(response)
                 completion(.success(()))
             } catch {
                 completion(.failure(error))
@@ -76,7 +57,7 @@ class WeatherAPIService {
         }.resume()
     }
     
-    private func performRequest(urlString: String, completion: @escaping (Result<WeatherData, Error>) -> Void) {
+    private func performWeatherRequest(urlString: String, completion: @escaping (Result<WeatherData, Error>) -> Void) {
         guard let url = URL(string: urlString) else {
             completion(.failure(APIError.invalidURL))
             return
@@ -88,19 +69,16 @@ class WeatherAPIService {
                 return
             }
             
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(APIError.invalidResponse))
-                return
-            }
-            
-            guard let data = data, let self = self else {
+            guard let data = data else {
                 completion(.failure(APIError.noData))
                 return
             }
             
             do {
-                let weatherData = try self.parseWeatherData(data)
+                let response = try JSONDecoder().decode(WeatherAPIResponseDTO.self, from: data)
+                let weatherData = try self?.createOrUpdateWeatherData(from: response) ?? {
+                    throw APIError.coreDataError
+                }()
                 completion(.success(weatherData))
             } catch {
                 completion(.failure(error))
@@ -108,13 +86,7 @@ class WeatherAPIService {
         }.resume()
     }
     
-    private func parseWeatherData(_ data: Data) throws -> WeatherData {
-        let response = try decoder.decode(WeatherAPIResponseDTO.self, from: data)
-        let weatherData = try updateOrCreateWeatherData(for: response)
-        return weatherData
-    }
-
-    private func updateOrCreateWeatherData(for response: WeatherAPIResponseDTO) throws -> WeatherData {
+    private func createOrUpdateWeatherData(from response: WeatherAPIResponseDTO) throws -> WeatherData {
         let fetchRequest: NSFetchRequest<WeatherData> = WeatherData.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "city == %@", response.name)
         
@@ -130,7 +102,6 @@ class WeatherAPIService {
         weatherData.highTemp = response.main.tempMax
         weatherData.lowTemp = response.main.tempMin
         weatherData.condition = response.weather.first?.main ?? "Unknown"
-        weatherData.conditionDescription = response.weather.first?.description ?? ""
         weatherData.humidity = Int16(response.main.humidity)
         weatherData.windSpeed = response.wind?.speed ?? 0
         weatherData.latitude = response.coord.lat
@@ -141,60 +112,24 @@ class WeatherAPIService {
         return weatherData
     }
     
-    private func updateHourlyForecasts(for weatherData: WeatherData, with response: ForecastAPIResponse) throws {
-        if let hourlyForecasts = weatherData.hourlyForecast as? Set<HourlyForecast> {
-            hourlyForecasts.forEach { context.delete($0) }
-        }
-        
-        let calendar = Calendar.current
-        let currentDate = Date()
-        
+    private func processForecastResponse(_ response: ForecastAPIResponseDTO) throws {
         for item in response.list {
-            let date = Date(timeIntervalSince1970: item.dt)
-            if calendar.isDate(date, inSameDayAs: currentDate) {
-                let hourly = HourlyForecast(context: context)
-                hourly.time = DateFormatter.hourFormatter.string(from: date)
-                hourly.timeDate = date
-                hourly.temp = item.main.temp
-                hourly.icon = WeatherIconManager.iconFor(item.weather.first?.main ?? "")
-                weatherData.addToHourlyForecast(hourly)
-            }
-        }
-        
-        try context.save()
-    }
-    
-    private func updateDailyForecasts(for weatherData: WeatherData, with response: ForecastAPIResponse) throws {
-        if let dailyForecasts = weatherData.dailyForecast as? Set<DailyForecast> {
-            dailyForecasts.forEach { context.delete($0) }
-        }
-        
-        let calendar = Calendar.current
-        let grouped = Dictionary(grouping: response.list) { element -> Date in
-            return calendar.startOfDay(for: Date(timeIntervalSince1970: element.dt))
-        }
-        
-        for (date, forecasts) in grouped {
-            guard let maxTempForecast = forecasts.max(by: { $0.main.tempMax < $1.main.tempMax }),
-                  let minTempForecast = forecasts.min(by: { $0.main.tempMin < $1.main.tempMin }) else {
-                continue
-            }
+            let hourlyForecast = HourlyForecast(context: context)
+            hourlyForecast.timeDate = Date(timeIntervalSince1970: item.dt)
+            hourlyForecast.time = DateFormatter.hourFormatter.string(from: hourlyForecast.timeDate ?? Date())
+            hourlyForecast.temp = item.main.temp
+            hourlyForecast.icon = WeatherIconHelper.iconFor(item.weather.first?.main ?? "")
             
-            let daily = DailyForecast(context: context)
-            daily.date = date
-            daily.highTemp = maxTempForecast.main.tempMax
-            daily.lowTemp = minTempForecast.main.tempMin
-            daily.icon = WeatherIconManager.iconFor(maxTempForecast.weather.first?.main ?? "")
-            weatherData.addToDailyForecast(daily)
         }
+        
         
         try context.save()
     }
     
     enum APIError: Error {
         case invalidURL
-        case invalidCityName
-        case invalidResponse
         case noData
+        case coreDataError
+        case decodingError
     }
 }

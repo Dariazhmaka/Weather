@@ -49,7 +49,6 @@ struct WeatherAPIResponseDTO: Codable {
     }
 }
 
-// Rename to ForecastAPIResponseDTO
 struct ForecastAPIResponseDTO: Codable {
     let list: [ForecastItem]
     
@@ -89,64 +88,6 @@ struct ForecastAPIResponseDTO: Codable {
     }
 }
 
-// Rename to WeatherDataModel (or remove if you're using Core Data WeatherData)
-struct WeatherDataModel {
-    let city: String
-    let temperature: Double
-    let highTemp: Double
-    let lowTemp: Double
-    let condition: String
-    let conditionDescription: String
-    let humidity: Int
-    let windSpeed: Double
-    let latitude: Double
-    let longitude: Double
-    
-    init(from response: WeatherAPIResponseDTO) {
-        city = response.name
-        temperature = response.main.temp
-        highTemp = response.main.tempMax
-        lowTemp = response.main.tempMin
-        condition = response.weather.first?.main ?? "Unknown"
-        conditionDescription = response.weather.first?.description ?? ""
-        humidity = response.main.humidity
-        windSpeed = response.wind?.speed ?? 0
-        latitude = response.coord.lat
-        longitude = response.coord.lon
-    }
-}
-
-// Rename to HourlyForecastModel
-struct HourlyForecastModel {
-    let time: String
-    let timeDate: Date
-    let temp: Double
-    let icon: String
-    
-    init(from item: ForecastAPIResponseDTO.ForecastItem) {
-        timeDate = Date(timeIntervalSince1970: item.dt)
-        time = DateFormatter.hourFormatter.string(from: timeDate)
-        temp = item.main.temp
-        icon = WeatherIconManager.iconFor(item.weather.first?.main ?? "")
-    }
-}
-
-// Rename to DailyForecastModel
-struct DailyForecastModel {
-    let date: Date
-    let highTemp: Double
-    let lowTemp: Double
-    let icon: String
-    
-    init(date: Date, highTemp: Double, lowTemp: Double, icon: String) {
-        self.date = date
-        self.highTemp = highTemp
-        self.lowTemp = lowTemp
-        self.icon = icon
-    }
-}
-
-// Rename to WeatherIconHelper
 enum WeatherIconHelper {
     static func iconFor(_ condition: String) -> String {
         switch condition.lowercased() {
