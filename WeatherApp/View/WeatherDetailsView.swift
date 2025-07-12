@@ -7,10 +7,8 @@
 
 import SwiftUI
 
-import SwiftUI
-
 struct WeatherDetailsView: View {
-    var weather: WeatherData
+    var weather: WeatherDataModel 
     
     var body: some View {
         VStack(spacing: 15) {

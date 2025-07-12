@@ -8,24 +8,23 @@
 import SwiftUI
 
 struct DailyForecastView: View {
-    var dailyData: [DailyForecast]
+    var dailyData: [DailyForecastModel]
     
     private let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE"
-        formatter.locale = Locale.current
         return formatter
     }()
     
     var body: some View {
         VStack(spacing: 15) {
-            ForEach(sortedDailyForecast.prefix(7), id: \.self) { day in
+            ForEach(dailyData.prefix(7)) { day in
                 HStack(spacing: 15) {
                     Text(dayName(for: day.date))
                         .font(.subheadline)
                         .frame(width: 80, alignment: .leading)
                     
-                    Image(systemName: day.icon ?? "questionmark")
+                    Image(systemName: day.icon)
                         .symbolRenderingMode(.multicolor)
                         .frame(width: 24)
                     
@@ -43,17 +42,11 @@ struct DailyForecastView: View {
                 .foregroundColor(.white)
                 .padding(.vertical, 5)
                 
-                if day != sortedDailyForecast.prefix(7).last {
+                if day.id != dailyData.prefix(7).last?.id {
                     Divider()
                         .background(Color.white.opacity(0.5))
                 }
             }
-        }
-    }
-    
-    private var sortedDailyForecast: [DailyForecast] {
-        dailyData.sorted {
-            ($0.date ?? Date.distantPast) < ($1.date ?? Date.distantPast)
         }
     }
     
@@ -76,8 +69,11 @@ struct DailyForecastView: View {
         .frame(height: 4)
     }
     
-    private func dayName(for date: Date?) -> String {
-        guard let date = date else { return "N/A" }
-        return dayFormatter.string(from: date).capitalized
+    private func dayName(for date: Date) -> String {
+        if Calendar.current.isDateInToday(date) {
+            return "Today"
+        } else {
+            return dayFormatter.string(from: date)
+        }
     }
 }

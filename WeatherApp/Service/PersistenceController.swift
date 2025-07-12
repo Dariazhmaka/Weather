@@ -5,22 +5,27 @@
 //  Created by Дарья on 09.07.2025.
 //
 
-import CoreData
+import Foundation
 
-struct PersistenceController {
-    static let shared = PersistenceController()
-
-    let container: NSPersistentContainer
-
-    init(inMemory: Bool = false) {
-        container = NSPersistentContainer(name: "WeatherApp")
-        if inMemory {
-            container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
+class Settings {
+    static let shared = Settings()
+    
+    private init() {}
+    
+    var lastCity: String? {
+        get { UserDefaults.standard.string(forKey: "lastCity") }
+        set { UserDefaults.standard.set(newValue, forKey: "lastCity") }
+    }
+    
+    var lastLocation: (lat: Double, lon: Double)? {
+        get {
+            let lat = UserDefaults.standard.double(forKey: "lastLat")
+            let lon = UserDefaults.standard.double(forKey: "lastLon")
+            return lat != 0 ? (lat, lon) : nil
         }
-        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
-            if let error = error as NSError? {
-                fatalError("Unresolved error \(error), \(error.userInfo)")
-            }
-        })
+        set {
+            UserDefaults.standard.set(newValue?.lat, forKey: "lastLat")
+            UserDefaults.standard.set(newValue?.lon, forKey: "lastLon")
+        }
     }
 }

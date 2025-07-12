@@ -7,12 +7,14 @@
 
 import Foundation
 
-struct WeatherAPIResponseDTO: Codable {
+struct WeatherResponse: Codable {
     let coord: Coord
     let weather: [Weather]
     let main: Main
     let wind: Wind?
     let name: String
+    let cod: Int?
+    let message: String?
     
     struct Coord: Codable {
         let lon: Double
@@ -35,28 +37,28 @@ struct WeatherAPIResponseDTO: Codable {
         let humidity: Int
         
         enum CodingKeys: String, CodingKey {
-            case temp
+            case temp, pressure, humidity
             case feelsLike = "feels_like"
             case tempMin = "temp_min"
             case tempMax = "temp_max"
-            case pressure, humidity
         }
     }
     
     struct Wind: Codable {
         let speed: Double
-        let deg: Int
+        let deg: Int?
     }
 }
 
-struct ForecastAPIResponseDTO: Codable {
+struct ForecastResponse: Codable {
     let list: [ForecastItem]
+    let city: City
     
     struct ForecastItem: Codable {
         let dt: TimeInterval
         let main: Main
         let weather: [Weather]
-        let dtTxt: String
+        let dtTxt: String?
         
         struct Main: Codable {
             let temp: Double
@@ -86,17 +88,17 @@ struct ForecastAPIResponseDTO: Codable {
             case dtTxt = "dt_txt"
         }
     }
-}
-
-enum WeatherIconHelper {
-    static func iconFor(_ condition: String) -> String {
-        switch condition.lowercased() {
-        case "clear": return "sun.max"
-        case "clouds": return "cloud"
-        case "rain": return "cloud.rain"
-        case "snow": return "snow"
-        case "thunderstorm": return "cloud.bolt.rain"
-        default: return "questionmark"
+    
+    struct City: Codable {
+        let id: Int
+        let name: String
+        let coord: Coord
+        let country: String
+        let timezone: Int
+        
+        struct Coord: Codable {
+            let lat: Double
+            let lon: Double
         }
     }
 }

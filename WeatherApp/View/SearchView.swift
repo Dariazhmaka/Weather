@@ -30,7 +30,6 @@ struct SearchView: View {
                 SearchBar(text: $searchText, placeholder: "Search for a city")
                     .padding(.horizontal)
                 
-                // Current Location Button
                 Button(action: useCurrentLocation) {
                     HStack {
                         Image(systemName: "location.fill")

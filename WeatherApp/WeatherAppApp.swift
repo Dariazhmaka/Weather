@@ -9,13 +9,11 @@ import SwiftUI
 
 @main
 struct WeatherAppApp: App {
-    let persistenceController = PersistenceController.shared
-    @StateObject private var weatherManager = WeatherManager(context: PersistenceController.shared.container.viewContext)
-
+    @StateObject private var weatherManager = WeatherManager()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(weatherManager)
                 .preferredColorScheme(.dark)
         }

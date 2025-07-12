@@ -8,16 +8,16 @@
 import SwiftUI
 
 struct HourlyForecastView: View {
-    var hourlyData: [HourlyForecast]
+    var hourlyData: [HourlyForecastModel]
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 15) {
-                ForEach(sortedHourlyData, id: \.self) { hour in
+                ForEach(hourlyData) { hour in
                     VStack(spacing: 8) {
-                        Text(hour.time ?? "--:--")
+                        Text(hour.time)
                             .font(.caption)
-                        Image(systemName: hour.icon ?? "questionmark")
+                        Image(systemName: hour.icon)
                             .symbolRenderingMode(.multicolor)
                             .font(.title2)
                         Text("\(Int(hour.temp))°")
@@ -28,12 +28,6 @@ struct HourlyForecastView: View {
                 }
             }
             .padding(.vertical, 5)
-        }
-    }
-    
-    private var sortedHourlyData: [HourlyForecast] {
-        hourlyData.sorted {
-            ($0.timeDate ?? Date.distantPast) < ($1.timeDate ?? Date.distantPast)
         }
     }
 }

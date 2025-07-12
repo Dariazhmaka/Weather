@@ -6,21 +6,20 @@
 //
 
 import SwiftUI
-import CoreData
 
 struct HomeView: View {
-    var weather: WeatherData
+    var weather: WeatherDataModel
     var topEdge: CGFloat
     @State var offset: CGFloat = 0
     @State private var selectedDate = Date()
-    @EnvironmentObject private var weatherManager: WeatherManager // Исправлено
+    @EnvironmentObject private var weatherManager: WeatherManager
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 15) {
                 weatherHeader
                 
-                if weatherManager.isForecastLoaded == false { // Теперь должно работать
+                if !weatherManager.isForecastLoaded {
                     ProgressView()
                         .padding(.vertical, 10)
                 }
@@ -28,23 +27,31 @@ struct HomeView: View {
                     DaySelectionView(selectedDate: $selectedDate, availableDates: availableDates)
                 }
                 
-                CustomStackView {
-                    Text("HOURLY FORECAST")
-                } contentView: {
-                    HourlyForecastView(hourlyData: filteredHourlyData)
+                if !weather.hourlyForecast.isEmpty {
+                    CustomStackView {
+                        Label {
+                            Text("HOURLY FORECAST")
+                        } icon: {
+                            Image(systemName: "clock")
+                        }
+                    } contentView: {
+                        HourlyForecastView(hourlyData: filteredHourlyData)
+                    }
                 }
                 
-                CustomStackView {
-                    Text("DAILY FORECAST")
-                } contentView: {
-                    DailyForecastView(dailyData: Array(weather.dailyForecast as? Set<DailyForecast> ?? []))
+                if !weather.dailyForecast.isEmpty {
+                    CustomStackView {
+                        Label {
+                            Text("DAILY FORECAST")
+                        } icon: {
+                            Image(systemName: "calendar")
+                        }
+                    } contentView: {
+                        DailyForecastView(dailyData: weather.dailyForecast)
+                    }
                 }
                 
-                CustomStackView {
-                    Text("WEATHER DETAILS")
-                } contentView: {
-                    WeatherDetailsView(weather: weather)
-                }
+                WeatherDetailsView(weather: weather)
             }
             .padding(.horizontal)
             .padding(.bottom, 20)
@@ -52,29 +59,29 @@ struct HomeView: View {
         .background(backgroundGradient)
         .onAppear {
             selectedDate = Date()
+            if !weatherManager.isForecastLoaded && weather.hourlyForecast.isEmpty {
+                weatherManager.fetchForecast(for: weather)
+            }
         }
     }
     
-    private var filteredHourlyData: [HourlyForecast] {
-        guard let hourly = weather.hourlyForecast as? Set<HourlyForecast> else { return [] }
-        return hourly.filter {
-            Calendar.current.isDate($0.timeDate ?? Date(), inSameDayAs: selectedDate)
+    private var filteredHourlyData: [HourlyForecastModel] {
+        weather.hourlyForecast.filter {
+            Calendar.current.isDate($0.timeDate, inSameDayAs: selectedDate)
         }.sorted {
-            ($0.timeDate ?? Date.distantPast) < ($1.timeDate ?? Date.distantPast)
+            $0.timeDate < $1.timeDate
         }
     }
     
     private var availableDates: [Date] {
-        guard let hourly = weather.hourlyForecast as? Set<HourlyForecast> else { return [] }
-        
-        let dates = hourly.compactMap { $0.timeDate }
+        let dates = weather.hourlyForecast.map { $0.timeDate }
         let uniqueDates = Array(Set(dates.map { Calendar.current.startOfDay(for: $0) }))
         return uniqueDates.sorted()
     }
     
     private var weatherHeader: some View {
         VStack(alignment: .center, spacing: 10) {
-            Text(weather.city ?? "Unknown City")
+            Text(weather.city)
                 .font(.title2)
                 .fontWeight(.semibold)
                 .opacity(getTitleOpacity())
@@ -83,7 +90,7 @@ struct HomeView: View {
                 .font(.system(size: 72, weight: .thin))
                 .opacity(getTempOpacity())
             
-            Text(weather.condition ?? "Unknown")
+            Text(weather.condition)
                 .font(.title3)
                 .opacity(getConditionOpacity())
             
