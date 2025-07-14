@@ -55,19 +55,15 @@ class WeatherAPIService {
             do {
                 let response = try JSONDecoder().decode(ForecastResponse.self, from: data)
                 
-                let now = Date()
-                let next24Hours = Calendar.current.date(byAdding: .hour, value: 24, to: now)!
-                
-                let hourlyForecast = response.list
-                    .filter { Date(timeIntervalSince1970: $0.dt) <= next24Hours }
-                    .map { item in
-                        HourlyForecastModel(
-                            time: self.dateFormatter.string(from: Date(timeIntervalSince1970: item.dt)),
-                            timeDate: Date(timeIntervalSince1970: item.dt),
-                            temp: item.main.temp,
-                            icon: WeatherIconManager.iconFor(item.weather.first?.main ?? "")
-                        )
-                    }
+                // Получаем прогноз на 5 дней (вместо 24 часов)
+                let hourlyForecast = response.list.map { item in
+                    HourlyForecastModel(
+                        time: self.dateFormatter.string(from: Date(timeIntervalSince1970: item.dt)),
+                        timeDate: Date(timeIntervalSince1970: item.dt),
+                        temp: item.main.temp,
+                        icon: WeatherIconManager.iconFor(item.weather.first?.main ?? "")
+                    )
+                }
                 
                 let dailyForecast = self.groupDailyForecast(from: response.list)
                 

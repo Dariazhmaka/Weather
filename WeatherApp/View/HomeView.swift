@@ -10,7 +10,6 @@ import SwiftUI
 struct HomeView: View {
     var weather: WeatherDataModel
     var topEdge: CGFloat
-    @State var offset: CGFloat = 0
     @State private var selectedDate = Date()
     @EnvironmentObject private var weatherManager: WeatherManager
     
@@ -22,9 +21,6 @@ struct HomeView: View {
                 if !weatherManager.isForecastLoaded {
                     ProgressView()
                         .padding(.vertical, 10)
-                }
-                else if !availableDates.isEmpty {
-                    DaySelectionView(selectedDate: $selectedDate, availableDates: availableDates)
                 }
                 
                 if !weather.hourlyForecast.isEmpty {
@@ -47,7 +43,10 @@ struct HomeView: View {
                             Image(systemName: "calendar")
                         }
                     } contentView: {
-                        DailyForecastView(dailyData: weather.dailyForecast)
+                        DailyForecastView(
+                            dailyData: weather.dailyForecast,
+                            selectedDate: $selectedDate
+                        )
                     }
                 }
                 
@@ -65,46 +64,44 @@ struct HomeView: View {
         }
     }
     
-    private var filteredHourlyData: [HourlyForecastModel] {
-        weather.hourlyForecast.filter {
-            Calendar.current.isDate($0.timeDate, inSameDayAs: selectedDate)
-        }.sorted {
-            $0.timeDate < $1.timeDate
-        }
-    }
-    
-    private var availableDates: [Date] {
-        let dates = weather.hourlyForecast.map { $0.timeDate }
-        let uniqueDates = Array(Set(dates.map { Calendar.current.startOfDay(for: $0) }))
-        return uniqueDates.sorted()
-    }
-    
     private var weatherHeader: some View {
         VStack(alignment: .center, spacing: 10) {
             Text(weather.city)
                 .font(.title2)
                 .fontWeight(.semibold)
-                .opacity(getTitleOpacity())
+                .opacity(getTitleOpacity)
             
             Text("\(Int(weather.temperature))°")
                 .font(.system(size: 72, weight: .thin))
-                .opacity(getTempOpacity())
+                .opacity(getTempOpacity)
             
             Text(weather.condition)
                 .font(.title3)
-                .opacity(getConditionOpacity())
+                .opacity(getConditionOpacity)
             
             HStack(spacing: 16) {
                 Text("H:\(Int(weather.highTemp))°")
                 Text("L:\(Int(weather.lowTemp))°")
             }
             .font(.subheadline)
-            .opacity(getHighLowOpacity())
+            .opacity(getHighLowOpacity)
         }
         .foregroundColor(.white)
         .padding(.top, 50 + topEdge)
         .padding(.bottom, 30)
         .offset(y: offset > 0 ? (offset / 1.5) : 0)
+    }
+    
+    private var filteredHourlyData: [HourlyForecastModel] {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: selectedDate)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        return weather.hourlyForecast.filter {
+            $0.timeDate >= startOfDay && $0.timeDate < endOfDay
+        }.sorted {
+            $0.timeDate < $1.timeDate
+        }
     }
     
     private var backgroundGradient: some View {
@@ -115,23 +112,25 @@ struct HomeView: View {
         .ignoresSafeArea()
     }
     
-    private func getTitleOpacity() -> Double {
+    private var getTitleOpacity: Double {
         let progress = -offset / 20
         return Double(1 - progress)
     }
     
-    private func getTempOpacity() -> Double {
+    private var getTempOpacity: Double {
         let progress = -offset / 50
         return Double(1 - progress)
     }
     
-    private func getConditionOpacity() -> Double {
+    private var getConditionOpacity: Double {
         let progress = -offset / 70
         return Double(1 - progress)
     }
     
-    private func getHighLowOpacity() -> Double {
+    private var getHighLowOpacity: Double {
         let progress = -offset / 100
         return Double(1 - progress)
     }
+    
+    @State private var offset: CGFloat = 0
 }

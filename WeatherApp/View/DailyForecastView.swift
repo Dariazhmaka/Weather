@@ -9,6 +9,7 @@ import SwiftUI
 
 struct DailyForecastView: View {
     var dailyData: [DailyForecastModel]
+    @Binding var selectedDate: Date
     
     private let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -19,28 +20,32 @@ struct DailyForecastView: View {
     var body: some View {
         VStack(spacing: 15) {
             ForEach(dailyData.prefix(7)) { day in
-                HStack(spacing: 15) {
-                    Text(dayName(for: day.date))
-                        .font(.subheadline)
-                        .frame(width: 80, alignment: .leading)
-                    
-                    Image(systemName: day.icon)
-                        .symbolRenderingMode(.multicolor)
-                        .frame(width: 24)
-                    
-                    Spacer()
-                    
-                    Text("\(Int(day.lowTemp))°")
-                        .frame(width: 36, alignment: .trailing)
-                    
-                    temperatureRangeView(lowTemp: day.lowTemp, highTemp: day.highTemp)
-                        .frame(maxWidth: 100)
-                    
-                    Text("\(Int(day.highTemp))°")
-                        .frame(width: 36, alignment: .leading)
+                Button(action: {
+                    selectedDate = day.date
+                }) {
+                    HStack(spacing: 15) {
+                        Text(dayName(for: day.date))
+                            .font(.subheadline)
+                            .frame(width: 80, alignment: .leading)
+                        
+                        Image(systemName: day.icon)
+                            .symbolRenderingMode(.multicolor)
+                            .frame(width: 24)
+                        
+                        Spacer()
+                        
+                        Text("\(Int(day.lowTemp))°")
+                            .frame(width: 36, alignment: .trailing)
+                        
+                        temperatureRangeView(lowTemp: day.lowTemp, highTemp: day.highTemp)
+                            .frame(maxWidth: 100)
+                        
+                        Text("\(Int(day.highTemp))°")
+                            .frame(width: 36, alignment: .leading)
+                    }
+                    .foregroundColor(Calendar.current.isDate(day.date, inSameDayAs: selectedDate) ? .white : .white.opacity(0.7))
+                    .padding(.vertical, 5)
                 }
-                .foregroundColor(.white)
-                .padding(.vertical, 5)
                 
                 if day.id != dailyData.prefix(7).last?.id {
                     Divider()
