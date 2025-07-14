@@ -16,76 +16,197 @@ struct WeatherEffectView: View {
         Group {
             switch effectType {
             case .rain:
-                ZStack {
-                    RainFallView(size: size)
-                    RainSplashView(size: size)
-                }
+                RainyView(size: size, withThunder: false)
             case .snow:
-                SnowFallView(size: size)
-            case .sun:
-                SunRayView()
-                    .opacity(0.4)
-            case .clouds:
-                CloudsView(size: size)
-                    .opacity(0.6)
-            case .thunderstorm:
-                ZStack {
-                    RainFallView(size: size)
-                    ThunderstormView(size: size)
-                }
+                SnowyView(size: size)
             case .fog:
-                FogView(size: size)
-            default:
+                FoggyView(size: size)
+            case .sun:
+                SunnyView(size: size)
+            case .clouds:
+                CloudyView(size: size)
+            case .thunderstorm:
+                RainyView(size: size, withThunder: true)
+            case .none:
                 EmptyView()
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .ignoresSafeArea()
+    }
+}
+
+// MARK: - Sunny Weather
+struct SunnyView: View {
+    let size: CGSize
+    @State private var sunGlow = false
+    @State private var rayRotation = 0.0
+    
+    var body: some View {
+        ZStack {
+            // Sky gradient
+            LinearGradient(gradient: Gradient(colors: [
+                Color(red: 0.35, green: 0.78, blue: 0.98),
+                Color(red: 0.45, green: 0.85, blue: 1.0)
+            ]), startPoint: .top, endPoint: .bottom)
+            
+            // Sun with glow animation
+            Circle()
+                .fill(RadialGradient(
+                    gradient: Gradient(colors: [
+                        .white,
+                        .yellow.opacity(0.3),
+                        .clear
+                    ]),
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 150
+                ))
+                .frame(width: 120, height: 120)
+                .position(x: size.width * 0.8, y: size.height * 0.2)
+                .scaleEffect(sunGlow ? 1.1 : 1.0)
+                .opacity(sunGlow ? 0.9 : 0.7)
+                .animation(
+                    Animation.easeInOut(duration: 2.0).repeatForever(),
+                    value: sunGlow
+                )
+            
+            // Sun rays
+            SunRaysView()
+                .frame(width: 300, height: 300)
+                .position(x: size.width * 0.8, y: size.height * 0.2)
+                .rotationEffect(.degrees(rayRotation))
+                .onAppear {
+                    withAnimation(.linear(duration: 30).repeatForever(autoreverses: false)) {
+                        rayRotation = 360
+                    }
+                }
+            
+            // Light clouds
+            CloudsView(size: size, type: .light, opacityRange: 0.3...0.5)
+        }
+        .onAppear {
+            sunGlow = true
+        }
+    }
+}
+
+struct SunRaysView: View {
+    var body: some View {
+        ZStack {
+            ForEach(0..<12) { i in
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                .yellow.opacity(0.4),
+                                .clear
+                            ]),
+                            startPoint: .center,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: 80, height: 8)
+                    .rotationEffect(.degrees(Double(i) * 30))
             }
         }
     }
 }
 
-struct Raindrop: Identifiable {
-    let id: UUID
-    var x: CGFloat
-    var y: CGFloat
-    var length: CGFloat
-    var speed: CGFloat
-}
-
-struct RaindropView: View {
-    let raindrop: Raindrop
+// MARK: - Rainy Weather
+struct RainyView: View {
     let size: CGSize
+    let withThunder: Bool
+    @State private var lightningFlash = false
     
     var body: some View {
-        Path { path in
-            path.move(to: CGPoint(x: raindrop.x, y: raindrop.y))
-            path.addLine(to: CGPoint(x: raindrop.x, y: raindrop.y + raindrop.length))
+        ZStack {
+            // Sky gradient
+            LinearGradient(gradient: Gradient(colors: [
+                Color(red: 0.2, green: 0.3, blue: 0.4),
+                Color(red: 0.3, green: 0.4, blue: 0.5)
+            ]), startPoint: .top, endPoint: .bottom)
+            
+            // Dark clouds
+            CloudsView(size: size, type: .dark, opacityRange: 0.7...0.9)
+            
+            // Rain
+            RainView(size: size)
+            
+            // Lightning effect
+            if withThunder && lightningFlash {
+                Rectangle()
+                    .fill(Color.white.opacity(0.3))
+                    .ignoresSafeArea()
+                    .animation(.easeOut(duration: 0.1), value: lightningFlash)
+            }
         }
-        .stroke(Color.blue.opacity(0.6), lineWidth: 1)
+        .onAppear {
+            if withThunder {
+                startLightning()
+            }
+        }
+    }
+    
+    private func startLightning() {
+        let delay = Double.random(in: 5...15)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            withAnimation(.easeIn(duration: 0.1)) {
+                lightningFlash = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    lightningFlash = false
+                }
+                startLightning()
+            }
+        }
     }
 }
 
-struct RainFallView: View {
+struct RainView: View {
     let size: CGSize
-    @State private var raindrops: [Raindrop] = []
+    @State private var drops: [RainDrop] = []
+    
+    struct RainDrop: Identifiable {
+        let id = UUID()
+        var x: CGFloat
+        var y: CGFloat
+        var length: CGFloat
+        var speed: CGFloat
+    }
     
     init(size: CGSize) {
         self.size = size
-        self._raindrops = State(initialValue: RainFallView.generateRaindrops(for: size))
+        self._drops = State(initialValue: RainView.generateDrops(for: size))
     }
     
     var body: some View {
         ZStack {
-            ForEach(raindrops) { raindrop in
-                RaindropView(raindrop: raindrop, size: size)
+            ForEach(drops) { drop in
+                RainDropShape(length: drop.length)
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.blue.opacity(0.6),
+                                Color.white.opacity(0.8)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 1.5
+                    )
+                    .position(x: drop.x, y: drop.y)
             }
         }
         .onAppear {
-            Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-                withAnimation(.linear(duration: 1.5)) {
-                    raindrops = raindrops.map { raindrop in
-                        var newDrop = raindrop
-                        newDrop.y += 10
+            Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { _ in
+                withAnimation(.linear(duration: 0.5)) {
+                    drops = drops.map { drop in
+                        var newDrop = drop
+                        newDrop.y += drop.speed * 3
                         if newDrop.y > size.height {
-                            newDrop.y = -20
+                            newDrop.y = -drop.length
                             newDrop.x = CGFloat.random(in: 0..<size.width)
                         }
                         return newDrop
@@ -95,142 +216,363 @@ struct RainFallView: View {
         }
     }
     
-    static func generateRaindrops(for size: CGSize) -> [Raindrop] {
-        (0..<100).map { _ in
-            Raindrop(
-                id: UUID(),
+    static func generateDrops(for size: CGSize) -> [RainDrop] {
+        (0..<150).map { _ in
+            RainDrop(
                 x: CGFloat.random(in: 0..<size.width),
-                y: CGFloat.random(in: -size.height..<size.height),
-                length: CGFloat.random(in: 10..<20),
-                speed: CGFloat.random(in: 1..<3)
+                y: CGFloat.random(in: -size.height..<0),
+                length: CGFloat.random(in: 15..<25),
+                speed: CGFloat.random(in: 5..<10)
             )
         }
     }
 }
 
-struct RainSplashView: View {
-    let size: CGSize
+struct RainDropShape: Shape {
+    var length: CGFloat
     
-    var body: some View {
-        Circle()
-            .fill(Color.blue.opacity(0.3))
-            .frame(width: 2, height: 2)
-            .position(x: CGFloat.random(in: 0..<size.width),
-                     y: size.height - 10)
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.minY + length))
+        return path
     }
 }
 
-struct SnowFallView: View {
+// MARK: - Snowy Weather
+struct SnowyView: View {
     let size: CGSize
+    @State private var snowflakes: [Snowflake] = []
     
-    var body: some View {
-        ForEach(0..<50, id: \.self) { _ in
-            Circle()
-                .fill(Color.white)
-                .frame(width: CGFloat.random(in: 2...5))
-                .position(
-                    x: CGFloat.random(in: 0..<size.width),
-                    y: CGFloat.random(in: 0..<size.height)
-                )
-                .animation(
-                    Animation.linear(duration: Double.random(in: 5...10))
-                        .repeatForever(autoreverses: false),
-                    value: UUID()
-                )
-        }
+    struct Snowflake: Identifiable {
+        let id = UUID()
+        var x: CGFloat
+        var y: CGFloat
+        var size: CGFloat
+        var speed: CGFloat
+        var opacity: Double
+        var rotation: Double
+        var rotationSpeed: Double
     }
-}
-
-struct CloudsView: View {
-    let size: CGSize
     
-    var body: some View {
-        ForEach(0..<5, id: \.self) { _ in
-            Circle()
-                .fill(Color.white.opacity(0.7))
-                .frame(width: CGFloat.random(in: 100...200))
-                .position(
-                    x: CGFloat.random(in: 0..<size.width),
-                    y: CGFloat.random(in: 0..<size.height/3))
-                
-        }
+    init(size: CGSize) {
+        self.size = size
+        self._snowflakes = State(initialValue: SnowyView.generateSnowflakes(for: size))
     }
-}
-
-struct ThunderstormView: View {
-    let size: CGSize
-    @State private var isFlashing = false
     
     var body: some View {
-        Rectangle()
-            .fill(isFlashing ? Color.white.opacity(0.3) : Color.clear)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onAppear {
-                flashLightning()
+        ZStack {
+            // Sky gradient
+            LinearGradient(gradient: Gradient(colors: [
+                Color(red: 0.15, green: 0.2, blue: 0.3),
+                Color(red: 0.25, green: 0.3, blue: 0.4)
+            ]), startPoint: .top, endPoint: .bottom)
+            
+            // Clouds
+            CloudsView(size: size, type: .light, opacityRange: 0.4...0.6)
+            
+            // Snowflakes
+            ForEach(snowflakes) { flake in
+                SnowflakeShape()
+                    .fill(Color.white.opacity(flake.opacity))
+                    .frame(width: flake.size, height: flake.size)
+                    .rotationEffect(.degrees(flake.rotation))
+                    .position(x: flake.x, y: flake.y)
             }
-    }
-    
-    private func flashLightning() {
-        let delay = Double.random(in: 3...8)
-        Timer.scheduledTimer(withTimeInterval: delay, repeats: true) { _ in
-            withAnimation(.easeInOut(duration: 0.1)) {
-                isFlashing = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation(.easeInOut(duration: 0.1)) {
-                    isFlashing = false
+        }
+        .onAppear {
+            Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+                withAnimation(.linear(duration: 2)) {
+                    snowflakes = snowflakes.map { flake in
+                        var newFlake = flake
+                        newFlake.y += flake.speed
+                        newFlake.rotation += flake.rotationSpeed
+                        
+                        if newFlake.y > size.height {
+                            newFlake.y = -20
+                            newFlake.x = CGFloat.random(in: 0..<size.width)
+                        }
+                        
+                        return newFlake
+                    }
                 }
             }
         }
     }
+    
+    static func generateSnowflakes(for size: CGSize) -> [Snowflake] {
+        (0..<60).map { _ in
+            Snowflake(
+                x: CGFloat.random(in: 0..<size.width),
+                y: CGFloat.random(in: -size.height..<0),
+                size: CGFloat.random(in: 2...8),
+                speed: CGFloat.random(in: 1...3),
+                opacity: Double.random(in: 0.5...0.9),
+                rotation: Double.random(in: 0...360),
+                rotationSpeed: Double.random(in: 0.1...0.5)
+            )
+        }
+    }
 }
 
-struct FogView: View {
+struct SnowflakeShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2
+        
+        for i in 0..<6 {
+            let angle = CGFloat(i) * .pi / 3
+            let tip = CGPoint(
+                x: center.x + radius * cos(angle),
+                y: center.y + radius * sin(angle)
+            )
+            
+            let branch1 = CGPoint(
+                x: center.x + radius * 0.5 * cos(angle - .pi/6),
+                y: center.y + radius * 0.5 * sin(angle - .pi/6)
+            )
+            
+            let branch2 = CGPoint(
+                x: center.x + radius * 0.5 * cos(angle + .pi/6),
+                y: center.y + radius * 0.5 * sin(angle + .pi/6)
+            )
+            
+            path.move(to: center)
+            path.addLine(to: tip)
+            path.move(to: tip)
+            path.addLine(to: branch1)
+            path.move(to: tip)
+            path.addLine(to: branch2)
+        }
+        
+        return path
+    }
+}
+
+// MARK: - Cloudy Weather
+struct CloudyView: View {
     let size: CGSize
+    
+    var body: some View {
+        ZStack {
+            // Sky gradient
+            LinearGradient(gradient: Gradient(colors: [
+                Color(red: 0.3, green: 0.3, blue: 0.4),
+                Color(red: 0.4, green: 0.4, blue: 0.5)
+            ]), startPoint: .top, endPoint: .bottom)
+            
+            // Clouds
+            CloudsView(size: size, type: .medium, opacityRange: 0.5...0.8)
+        }
+    }
+}
+
+// MARK: - Foggy Weather
+struct FoggyView: View {
+    let size: CGSize
+    @State private var fogOpacity: Double = 0
+    
+    var body: some View {
+        ZStack {
+            // Sky gradient
+            LinearGradient(gradient: Gradient(colors: [
+                Color(red: 0.4, green: 0.4, blue: 0.5),
+                Color(red: 0.5, green: 0.5, blue: 0.6)
+            ]), startPoint: .top, endPoint: .bottom)
+            
+            // Fog layers
+            ForEach(0..<3) { i in
+                FogLayer(depth: Double(i) / 3)
+                    .opacity(fogOpacity)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2)) {
+                fogOpacity = 1
+            }
+        }
+    }
+}
+
+struct FogLayer: View {
+    let depth: Double
+    @State private var offset: CGFloat = 0
     
     var body: some View {
         Rectangle()
             .fill(
                 LinearGradient(
                     gradient: Gradient(colors: [
-                        Color.white.opacity(0.1),
-                        Color.white.opacity(0.3)
+                        Color.white.opacity(0.1 + depth * 0.1),
+                        Color.white.opacity(0.3 + depth * 0.1)
                     ]),
                     startPoint: .top,
                     endPoint: .bottom
                 )
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .offset(x: offset)
+            .animation(
+                Animation.linear(duration: 20 + Double.random(in: 0...10))
+                    .repeatForever(autoreverses: false),
+                value: offset
+            )
+            .onAppear {
+                offset = CGFloat.random(in: -100...100)
+            }
     }
 }
 
-struct SunRayView: View {
-    @State private var rotation: Double = 0
+// MARK: - Clouds Component
+enum CloudType {
+    case light
+    case medium
+    case dark
+}
+
+struct CloudsView: View {
+    let size: CGSize
+    let type: CloudType
+    let opacityRange: ClosedRange<Double>
+    @State private var clouds: [Cloud] = []
+    
+    struct Cloud: Identifiable {
+        let id = UUID()
+        var position: CGPoint
+        var size: CGFloat
+        var speed: CGFloat
+        var opacity: Double
+        var style: Int
+    }
+    
+    init(size: CGSize, type: CloudType, opacityRange: ClosedRange<Double>) {
+        self.size = size
+        self.type = type
+        self.opacityRange = opacityRange
+        self._clouds = State(initialValue: CloudsView.generateClouds(for: size, type: type, opacityRange: opacityRange))
+    }
     
     var body: some View {
         ZStack {
-            ForEach(0..<12) { i in
-                Rectangle()
-                    .fill(
-                        AngularGradient(
-                            gradient: Gradient(colors: [
-                                .yellow.opacity(0.4),
-                                .clear
-                            ]),
-                            center: .center,
-                            startAngle: .degrees(Double(i) * 30),
-                            endAngle: .degrees(Double(i) * 30 + 15)
-                        )
-                    )
-                    .frame(width: 2, height: 300)
-                    .rotationEffect(.degrees(Double(i) * 30))
+            ForEach(clouds) { cloud in
+                if cloud.style == 0 {
+                    CloudShape1()
+                        .fill(cloudColor.opacity(cloud.opacity))
+                        .frame(width: cloud.size, height: cloud.size * 0.6)
+                        .position(cloud.position)
+                } else {
+                    CloudShape2()
+                        .fill(cloudColor.opacity(cloud.opacity))
+                        .frame(width: cloud.size, height: cloud.size * 0.5)
+                        .position(cloud.position)
+                }
             }
         }
-        .rotationEffect(.degrees(rotation))
         .onAppear {
-            withAnimation(.linear(duration: 20).repeatForever(autoreverses: false)) {
-                rotation = 360
+            Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+                withAnimation(.linear(duration: 2)) {
+                    clouds = clouds.map { cloud in
+                        var newCloud = cloud
+                        newCloud.position.x += cloud.speed
+                        
+                        if newCloud.position.x > size.width + cloud.size {
+                            newCloud.position.x = -cloud.size
+                            newCloud.position.y = CGFloat.random(in: 0..<(size.height/2))
+                        }
+                        
+                        return newCloud
+                    }
+                }
             }
         }
+    }
+    
+    private var cloudColor: Color {
+        switch type {
+        case .light: return .white
+        case .medium: return Color(white: 0.8)
+        case .dark: return Color(white: 0.6)
+        }
+    }
+    
+    static func generateClouds(for size: CGSize, type: CloudType, opacityRange: ClosedRange<Double>) -> [Cloud] {
+        let cloudCount: Int
+        let sizeRange: ClosedRange<CGFloat>
+        let speedRange: ClosedRange<CGFloat>
+        
+        switch type {
+        case .light:
+            cloudCount = 4
+            sizeRange = 80...180
+            speedRange = 0.1...0.3
+        case .medium:
+            cloudCount = 6
+            sizeRange = 100...220
+            speedRange = 0.2...0.4
+        case .dark:
+            cloudCount = 8
+            sizeRange = 120...250
+            speedRange = 0.3...0.6
+        }
+        
+        return (0..<cloudCount).map { _ in
+            Cloud(
+                position: CGPoint(
+                    x: CGFloat.random(in: -size.width..<size.width),
+                    y: CGFloat.random(in: 0..<(size.height/3))
+                ),
+                size: CGFloat.random(in: sizeRange),
+                speed: CGFloat.random(in: speedRange),
+                opacity: Double.random(in: opacityRange),
+                style: Int.random(in: 0...1)
+            )
+        }
+    }
+}
+
+struct CloudShape1: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let width = rect.width
+        let height = rect.height
+        
+        path.addEllipse(in: CGRect(x: width * 0.1, y: height * 0.3, width: width * 0.3, height: height * 0.5))
+        path.addEllipse(in: CGRect(x: width * 0.3, y: height * 0.1, width: width * 0.5, height: height * 0.6))
+        path.addEllipse(in: CGRect(x: width * 0.6, y: height * 0.2, width: width * 0.4, height: height * 0.5))
+        
+        return path
+    }
+}
+
+struct CloudShape2: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let width = rect.width
+        let height = rect.height
+        
+        path.addEllipse(in: CGRect(x: width * 0.2, y: height * 0.4, width: width * 0.6, height: height * 0.4))
+        path.addEllipse(in: CGRect(x: width * 0.4, y: height * 0.2, width: width * 0.5, height: height * 0.5))
+        path.addEllipse(in: CGRect(x: width * 0.1, y: height * 0.3, width: width * 0.4, height: height * 0.4))
+        path.addEllipse(in: CGRect(x: width * 0.7, y: height * 0.3, width: width * 0.3, height: height * 0.3))
+        
+        return path
+    }
+}
+
+extension WeatherEffectManager {
+    static func conditionFromIcon(_ icon: String) -> String {
+        if icon.contains("sun") {
+            return "clear"
+        } else if icon.contains("cloud") {
+            return "clouds"
+        } else if icon.contains("rain") {
+            return "rain"
+        } else if icon.contains("snow") {
+            return "snow"
+        } else if icon.contains("bolt") {
+            return "thunderstorm"
+        }
+        return "clear"
     }
 }

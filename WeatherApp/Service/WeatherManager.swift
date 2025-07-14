@@ -50,6 +50,7 @@ class WeatherManager: ObservableObject {
         }
     }
     
+    
     func fetchForecast(for weatherData: WeatherDataModel) {
         apiService.fetchForecast(latitude: weatherData.latitude, longitude: weatherData.longitude) { [weak self] result in
             DispatchQueue.main.async {

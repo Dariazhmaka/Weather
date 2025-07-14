@@ -25,26 +25,32 @@ struct ContentView: View {
             }
             
             if weatherManager.currentWeather != nil {
-                Button(action: { showingSearch.toggle() }) {
-                    Image(systemName: "magnifyingglass")
-                        .padding(10)
-                        .background(Color.white.opacity(0.2))
-                        .clipShape(Circle())
-                }
-                .padding()
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-            }
-        }
-        .sheet(isPresented: $showingSearch) {
-            SearchView(weatherManager: weatherManager)
-                .environmentObject(weatherManager)
-        }
-        .onAppear {
-            if weatherManager.currentWeather == nil {
-                weatherManager.fetchWeather(for: "Москва")
-            }
-        }
-    }
+                           VStack {
+                               HStack {
+                                   Spacer()
+                                   Button(action: { showingSearch.toggle() }) {
+                                       Image(systemName: "magnifyingglass")
+                                           .padding(10)
+                                           .background(Color.white.opacity(0.2))
+                                           .clipShape(Circle())
+                                   }
+                                   .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
+                                   .padding(.trailing)
+                               }
+                               Spacer()
+                           }
+                       }
+                   }
+                   .sheet(isPresented: $showingSearch) {
+                       SearchView(weatherManager: weatherManager)
+                           .environmentObject(weatherManager)
+                   }
+                   .onAppear {
+                       if weatherManager.currentWeather == nil {
+                           weatherManager.fetchWeather(for: "Москва")
+                       }
+                   }
+               }
     
     private var welcomeView: some View {
         VStack {

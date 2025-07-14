@@ -17,7 +17,14 @@ struct HomeView: View {
     @State private var isRefreshing = false
     
     private var effectType: WeatherEffectType {
-        WeatherEffectManager.effectType(for: weather.condition)
+        WeatherEffectManager.effectType(for: selectedDayWeatherCondition)
+    }
+    
+    private var selectedDayWeatherCondition: String {
+        if let selectedDay = weather.dailyForecast.first(where: { Calendar.current.isDate($0.date, inSameDayAs: selectedDate) }) {
+            return selectedDay.icon
+        }
+        return weather.condition
     }
     
     private let dayFormatter: DateFormatter = {
