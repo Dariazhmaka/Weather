@@ -18,6 +18,10 @@ struct WeatherDataModel {
     let windSpeed: Double
     let latitude: Double
     let longitude: Double
+    let pressure: Int?
+    let feelsLike: Double?
+    let sunrise: Date?
+    let sunset: Date?
     var hourlyForecast: [HourlyForecastModel]
     var dailyForecast: [DailyForecastModel]
     
@@ -30,8 +34,12 @@ struct WeatherDataModel {
          windSpeed: Double?,
          latitude: Double?,
          longitude: Double?,
-         hourlyForecast: [HourlyForecastModel],
-         dailyForecast: [DailyForecastModel]
+         pressure: Int? = nil,
+         feelsLike: Double? = nil,
+         sunrise: Date? = nil,
+         sunset: Date? = nil,
+         hourlyForecast: [HourlyForecastModel] = [],
+         dailyForecast: [DailyForecastModel] = []
     ) {
         self.city = city ?? "Unknown City"
         self.temperature = temperature ?? 0.0
@@ -42,6 +50,10 @@ struct WeatherDataModel {
         self.windSpeed = windSpeed ?? 0.0
         self.latitude = latitude ?? 0.0
         self.longitude = longitude ?? 0.0
+        self.pressure = pressure
+        self.feelsLike = feelsLike
+        self.sunrise = sunrise
+        self.sunset = sunset
         self.hourlyForecast = hourlyForecast
         self.dailyForecast = dailyForecast
     }

@@ -10,12 +10,30 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var weatherManager: WeatherManager
     @State private var showingSearch = false
-    @State private var initialLoadDone = false
     
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            mainContent
-            searchButton
+        ZStack {
+            if let weather = weatherManager.currentWeather {
+                HomeView(weather: weather, topEdge: 0)
+                    .environmentObject(weatherManager)
+            } else if weatherManager.isLoading {
+                LoadingView()
+            } else if let error = weatherManager.error {
+                ErrorView(error: error, retryAction: retryLoading)
+            } else {
+                welcomeView
+            }
+            
+            if weatherManager.currentWeather != nil {
+                Button(action: { showingSearch.toggle() }) {
+                    Image(systemName: "magnifyingglass")
+                        .padding(10)
+                        .background(Color.white.opacity(0.2))
+                        .clipShape(Circle())
+                }
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            }
         }
         .sheet(isPresented: $showingSearch) {
             SearchView(weatherManager: weatherManager)
@@ -23,74 +41,30 @@ struct ContentView: View {
         }
         .onAppear {
             if weatherManager.currentWeather == nil {
-                weatherManager.fetchWeather(for: "London") 
-            }
-        }
-    }
-}
-
-private extension ContentView {
-    var mainContent: some View {
-        Group {
-            switch (weatherManager.isLoading, weatherManager.error, weatherManager.currentWeather) {
-            case (false, _, let weather?):
-                HomeView(weather: weather, topEdge: 0)
-                    .environmentObject(weatherManager)
-                
-            case (true, _, _):
-                LoadingView()
-                
-            case (false, let error?, _):
-                ErrorView(error: error, retryAction: retryLoading)
-                
-            default:
-                welcomeView
+                weatherManager.fetchWeather(for: "Москва")
             }
         }
     }
     
-    var searchButton: some View {
-        Button(action: toggleSearch) {
-            Image(systemName: "magnifyingglass")
-                .padding(10)
-                .background(Color.white.opacity(0.2))
-                .clipShape(Circle())
-        }
-        .padding()
-    }
-    
-    var welcomeView: some View {
+    private var welcomeView: some View {
         VStack {
-            Text("Welcome to WeatherApp")
+            Text("Добро пожаловать в Погода")
                 .font(.title)
             
-            Button("Get Weather", action: loadInitialData)
+            Button("Получить погоду", action: loadInitialData)
                 .buttonStyle(.borderedProminent)
                 .padding(.top, 20)
         }
         .foregroundColor(.white)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-}
+    
+    private func loadInitialData() {
+        weatherManager.fetchWeather(for: "Москва")
+    }
+    
+    private func retryLoading() {
+        weatherManager.fetchWeather(for: "Москва")
+    }
 
-private extension ContentView {
-    func handleInitialLoad() {
-        guard !initialLoadDone else { return }
-        loadInitialData()
-    }
-    
-    func loadInitialData() {
-        debugPrint("Starting initial load")
-        initialLoadDone = true
-        weatherManager.fetchWeather(for: "London")
-    }
-    
-    func retryLoading() {
-        debugPrint("Retrying load")
-        weatherManager.fetchWeather(for: "London")
-    }
-    
-    func toggleSearch() {
-        showingSearch.toggle()
-    }
 }

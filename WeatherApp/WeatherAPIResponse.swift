@@ -12,9 +12,13 @@ struct WeatherResponse: Codable {
     let weather: [Weather]
     let main: Main
     let wind: Wind?
+    let sys: Sys
     let name: String
-    let cod: Int?
-    let message: String?
+    
+    struct Sys: Codable {
+        let sunrise: TimeInterval
+        let sunset: TimeInterval
+    }
     
     struct Coord: Codable {
         let lon: Double

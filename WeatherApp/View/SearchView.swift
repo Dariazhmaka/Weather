@@ -27,13 +27,13 @@ struct SearchView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 15) {
-                SearchBar(text: $searchText, placeholder: "Search for a city")
+                SearchBar(text: $searchText, placeholder: "Выбрать город")
                     .padding(.horizontal)
                 
                 Button(action: useCurrentLocation) {
                     HStack {
                         Image(systemName: "location.fill")
-                        Text("Use Current Location")
+                        Text("Мое местоположение")
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -42,9 +42,8 @@ struct SearchView: View {
                 }
                 .padding(.horizontal)
                 
-                // Coordinates Search
                 VStack(spacing: 10) {
-                    Text("Or search by coordinates:")
+                    Text("Выбор по координитам:")
                         .font(.caption)
                     
                     HStack {
@@ -59,7 +58,7 @@ struct SearchView: View {
                     .padding(.horizontal)
                     
                     Button(action: searchByCoordinates) {
-                        Text("Search by Coordinates")
+                        Text("выбор по координатам")
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Color.blue)
@@ -70,9 +69,8 @@ struct SearchView: View {
                     .disabled(latitude.isEmpty || longitude.isEmpty)
                 }
                 
-                // Cities List
                 List {
-                    Section(header: Text("Popular Cities")) {
+                    Section(header: Text("Популярные города")) {
                         ForEach(filteredCities, id: \.self) { city in
                             Button(action: { searchByCity(city) }) {
                                 Text(city)
@@ -82,11 +80,11 @@ struct SearchView: View {
                 }
                 .listStyle(InsetGroupedListStyle())
             }
-            .navigationTitle("Search")
+            .navigationTitle("Выбрать")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Cancel") {
+                    Button("Закрыть") {
                         presentationMode.wrappedValue.dismiss()
                     }
                 }

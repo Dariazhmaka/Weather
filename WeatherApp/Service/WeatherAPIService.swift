@@ -55,7 +55,6 @@ class WeatherAPIService {
             do {
                 let response = try JSONDecoder().decode(ForecastResponse.self, from: data)
                 
-                // Получаем прогноз на 5 дней (вместо 24 часов)
                 let hourlyForecast = response.list.map { item in
                     HourlyForecastModel(
                         time: self.dateFormatter.string(from: Date(timeIntervalSince1970: item.dt)),
@@ -74,6 +73,30 @@ class WeatherAPIService {
         }.resume()
     }
     
+
+    
+    private func groupDailyForecast(from list: [ForecastResponse.ForecastItem]) -> [DailyForecastModel] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: list) { item -> Date in
+            calendar.startOfDay(for: Date(timeIntervalSince1970: item.dt))
+        }
+        
+        return grouped.map { (date: Date, items: [ForecastResponse.ForecastItem]) -> DailyForecastModel in
+            let temps = items.map { $0.main.temp }
+            let highTemp = temps.max() ?? 0
+            let lowTemp = temps.min() ?? 0
+            let icon = items.sorted { $0.main.temp > $1.main.temp }.first?.weather.first?.main ?? ""
+            
+            return DailyForecastModel(
+                date: date,
+                highTemp: highTemp,
+                lowTemp: lowTemp,
+                icon: WeatherIconManager.iconFor(icon)
+            )
+        }.sorted { $0.date < $1.date }
+    }
+}
+extension WeatherAPIService {
     private func performRequest(urlString: String,
                               completion: @escaping (Result<WeatherDataModel, WeatherError>) -> Void) {
         guard let url = URL(string: urlString) else {
@@ -104,6 +127,10 @@ class WeatherAPIService {
                     windSpeed: response.wind?.speed ?? 0,
                     latitude: response.coord.lat,
                     longitude: response.coord.lon,
+                    pressure: response.main.pressure,
+                    feelsLike: response.main.feelsLike,
+                    sunrise: Date(timeIntervalSince1970: response.sys.sunrise),
+                    sunset: Date(timeIntervalSince1970: response.sys.sunset),
                     hourlyForecast: [],
                     dailyForecast: []
                 )
@@ -113,29 +140,7 @@ class WeatherAPIService {
             }
         }.resume()
     }
-    
-    private func groupDailyForecast(from list: [ForecastResponse.ForecastItem]) -> [DailyForecastModel] {
-        let calendar = Calendar.current
-        let grouped = Dictionary(grouping: list) { item -> Date in
-            calendar.startOfDay(for: Date(timeIntervalSince1970: item.dt))
-        }
-        
-        return grouped.map { (date: Date, items: [ForecastResponse.ForecastItem]) -> DailyForecastModel in
-            let temps = items.map { $0.main.temp }
-            let highTemp = temps.max() ?? 0
-            let lowTemp = temps.min() ?? 0
-            let icon = items.sorted { $0.main.temp > $1.main.temp }.first?.weather.first?.main ?? ""
-            
-            return DailyForecastModel(
-                date: date,
-                highTemp: highTemp,
-                lowTemp: lowTemp,
-                icon: WeatherIconManager.iconFor(icon)
-            )
-        }.sorted { $0.date < $1.date }
-    }
 }
-
 struct ForecastData {
     let hourly: [HourlyForecastModel]
     let daily: [DailyForecastModel]

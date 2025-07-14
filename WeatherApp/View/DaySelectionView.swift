@@ -28,7 +28,7 @@ struct DaySelectionView: View {
                             Text(dateFormatter.string(from: date))
                                 .font(.subheadline)
                             if Calendar.current.isDate(date, inSameDayAs: Date()) {
-                                Text("Today")
+                                Text("Сегодня")
                                     .font(.caption2)
                             }
                         }

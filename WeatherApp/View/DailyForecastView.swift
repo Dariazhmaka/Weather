@@ -76,7 +76,7 @@ struct DailyForecastView: View {
     
     private func dayName(for date: Date) -> String {
         if Calendar.current.isDateInToday(date) {
-            return "Today"
+            return "Сегодня"
         } else {
             return dayFormatter.string(from: date)
         }

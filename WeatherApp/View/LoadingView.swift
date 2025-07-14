@@ -13,7 +13,7 @@ struct LoadingView: View {
             ProgressView()
                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 .scaleEffect(1.5)
-            Text("Loading weather data...")
+            Text("Загрузка...")
                 .foregroundColor(.white)
                 .padding(.top, 10)
         }
