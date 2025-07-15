@@ -55,7 +55,6 @@ class WeatherAPIService {
             do {
                 let response = try JSONDecoder().decode(ForecastResponse.self, from: data)
                 
-                // Получаем прогноз на 5 дней (вместо 24 часов)
                 let hourlyForecast = response.list.map { item in
                     HourlyForecastModel(
                         time: self.dateFormatter.string(from: Date(timeIntervalSince1970: item.dt)),

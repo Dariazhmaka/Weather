@@ -113,22 +113,22 @@ struct HomeView: View {
     }
     
     private var getTitleOpacity: Double {
-        let progress = -offset / 20
+        let progress = offset / 20
         return Double(1 - progress)
     }
     
     private var getTempOpacity: Double {
-        let progress = -offset / 50
+        let progress = offset / 50
         return Double(1 - progress)
     }
     
     private var getConditionOpacity: Double {
-        let progress = -offset / 70
+        let progress = offset / 70
         return Double(1 - progress)
     }
     
     private var getHighLowOpacity: Double {
-        let progress = -offset / 100
+        let progress = offset / 100
         return Double(1 - progress)
     }
     

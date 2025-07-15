@@ -20,13 +20,13 @@ struct DailyForecastView: View {
     var body: some View {
         VStack(spacing: 15) {
             ForEach(dailyData.prefix(7)) { day in
-                Button(action: {
+                Button (action: {
                     selectedDate = day.date
-                }) {
-                    HStack(spacing: 15) {
-                        Text(dayName(for: day.date))
-                            .font(.subheadline)
-                            .frame(width: 80, alignment: .leading)
+                }, label: {
+                               HStack(spacing: 15) {
+                                   Text(dayName(for: day.date))
+                                       .font(.subheadline)
+                                       .frame(width: 80, alignment: .leading)
                         
                         Image(systemName: day.icon)
                             .symbolRenderingMode(.multicolor)
@@ -46,7 +46,7 @@ struct DailyForecastView: View {
                     .foregroundColor(Calendar.current.isDate(day.date, inSameDayAs: selectedDate) ? .white : .white.opacity(0.7))
                     .padding(.vertical, 5)
                 }
-                
+                )
                 if day.id != dailyData.prefix(7).last?.id {
                     Divider()
                         .background(Color.white.opacity(0.5))

@@ -20,7 +20,13 @@ struct ContentView: View {
         .sheet(isPresented: $showingSearch) {
             SearchView(weatherManager: weatherManager)
                 .environmentObject(weatherManager)
-        }
+                .environment(\.detailColors, DetailColors(
+                    icon: .red,
+                    title: .gray,
+                    value: .black,
+                    background: .yellow.opacity(0.1)
+                )
+        )}
         .onAppear {
             if weatherManager.currentWeather == nil {
                 weatherManager.fetchWeather(for: "London") 
@@ -75,7 +81,9 @@ private extension ContentView {
 
 private extension ContentView {
     func handleInitialLoad() {
-        guard !initialLoadDone else { return }
+        guard !initialLoadDone else {
+            return
+        }
         loadInitialData()
     }
     

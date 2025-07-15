@@ -21,7 +21,7 @@ class Settings {
         get {
             let lat = UserDefaults.standard.double(forKey: "lastLat")
             let lon = UserDefaults.standard.double(forKey: "lastLon")
-            return lat != 0 ? (lat, lon) : nil
+            return (lat, lon) 
         }
         set {
             UserDefaults.standard.set(newValue?.lat, forKey: "lastLat")

@@ -42,7 +42,6 @@ struct SearchView: View {
                 }
                 .padding(.horizontal)
                 
-                // Coordinates Search
                 VStack(spacing: 10) {
                     Text("Or search by coordinates:")
                         .font(.caption)
@@ -70,7 +69,6 @@ struct SearchView: View {
                     .disabled(latitude.isEmpty || longitude.isEmpty)
                 }
                 
-                // Cities List
                 List {
                     Section(header: Text("Popular Cities")) {
                         ForEach(filteredCities, id: \.self) { city in

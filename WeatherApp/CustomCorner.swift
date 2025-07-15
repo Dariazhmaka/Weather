@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct CustomCorner: Shape {
+struct Corner: Shape {
     var corners: UIRectCorner
     var radius: CGFloat
     
