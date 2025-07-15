@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject private var weatherManager: WeatherManager
+    @EnvironmentObject var weatherManager: WeatherManager
     @State private var showingSearch = false
+    @State private var showingCitiesList = false
+    @State private var initialLoadCompleted = false
     
     var body: some View {
         ZStack {
@@ -25,34 +27,57 @@ struct ContentView: View {
             }
             
             if weatherManager.currentWeather != nil {
-                           VStack {
-                               HStack {
-                                   Spacer()
-                                   Button(action: { showingSearch.toggle() }) {
-                                       Image(systemName: "magnifyingglass")
-                                           .padding(10)
-                                           .background(Color.white.opacity(0.2))
-                                           .clipShape(Circle())
-                                   }
-                                   .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
-                                   .padding(.trailing)
-                               }
-                               Spacer()
-                           }
-                       }
-                   }
-                   .sheet(isPresented: $showingSearch) {
-                       SearchView(weatherManager: weatherManager)
-                           .environmentObject(weatherManager)
-                   }
-                   .onAppear {
-                       if weatherManager.currentWeather == nil {
-                           weatherManager.fetchWeather(for: "Москва")
-                       }
-                   }
-               }
+                VStack {
+                    HStack {
+                        Button(action: { showingCitiesList.toggle() }) {
+                            HStack {
+                                Image(systemName: "list.bullet")
+                                Text("Мои города")
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.white.opacity(0.2))
+                            .clipShape(Capsule())
+                        }
+                        .padding(.leading)
+                        
+                        Spacer()
+                        
+                        Button(action: { showingSearch.toggle() }) {
+                            Image(systemName: "magnifyingglass")
+                                .padding(10)
+                                .background(Color.white.opacity(0.2))
+                                .clipShape(Circle())
+                        }
+                        .padding(.trailing)
+                    }
+                    .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
+                    
+                    Spacer()
+                }
+            }
+        }
+        .sheet(isPresented: $showingSearch) {
+            SearchView(weatherManager: weatherManager)
+                .environmentObject(weatherManager)
+        }
+        .sheet(isPresented: $showingCitiesList) {
+            SavedCitiesView()
+                .environmentObject(weatherManager)
+        }
+        .onAppear {
+            guard !initialLoadCompleted else { return }
+            initialLoadCompleted = true
+            
+            if let firstCity = weatherManager.savedCities.first {
+                weatherManager.switchToCity(firstCity)
+            } else {
+                weatherManager.fetchWeather(for: "Москва")
+            }
+        }
+    }
     
-    private var welcomeView: some View {
+    var welcomeView: some View {
         VStack {
             Text("Добро пожаловать в Погода")
                 .font(.title)
@@ -65,12 +90,11 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
-    private func loadInitialData() {
+    func loadInitialData() {
         weatherManager.fetchWeather(for: "Москва")
     }
     
-    private func retryLoading() {
+    func retryLoading() {
         weatherManager.fetchWeather(for: "Москва")
     }
-
 }

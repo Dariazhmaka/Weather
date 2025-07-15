@@ -75,7 +75,8 @@ struct HomeView: View {
         .onAppear {
             selectedDate = Date()
             if !weatherManager.isForecastLoaded && weather.hourlyForecast.isEmpty {
-                weatherManager.fetchForecast(for: weather)
+                weatherManager.fetchForecast(latitude: weather.latitude, longitude: weather.longitude) { _ in
+                }
             }
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -88,8 +89,7 @@ struct HomeView: View {
             withAnimation {
                 isRefreshing = newValue
             }
-        }
-    }
+        }    }
         
     private var weatherBackground: some View {
         Group {

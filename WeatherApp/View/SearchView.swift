@@ -104,46 +104,46 @@ struct SearchView: View {
     
     private func searchByCoordinates() {
         if let lat = Double(latitude), let lon = Double(longitude) {
-            weatherManager.fetchWeather(latitude: lat, longitude: lon)
+            weatherManager.fetchWeather(for: "\(lat),\(lon)")
             presentationMode.wrappedValue.dismiss()
         }
     }
-}
-
-struct SearchBar: UIViewRepresentable {
-    @Binding var text: String
-    var placeholder: String
     
-    func makeUIView(context: Context) -> UISearchBar {
-        let searchBar = UISearchBar()
-        searchBar.placeholder = placeholder
-        searchBar.searchBarStyle = .minimal
-        searchBar.autocapitalizationType = .none
-        return searchBar
-    }
-    
-    func updateUIView(_ uiView: UISearchBar, context: Context) {
-        uiView.text = text
-        uiView.delegate = context.coordinator
-    }
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text)
-    }
-    
-    class Coordinator: NSObject, UISearchBarDelegate {
+    struct SearchBar: UIViewRepresentable {
         @Binding var text: String
+        var placeholder: String
         
-        init(text: Binding<String>) {
-            _text = text
+        func makeUIView(context: Context) -> UISearchBar {
+            let searchBar = UISearchBar()
+            searchBar.placeholder = placeholder
+            searchBar.searchBarStyle = .minimal
+            searchBar.autocapitalizationType = .none
+            return searchBar
         }
         
-        func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-            text = searchText
+        func updateUIView(_ uiView: UISearchBar, context: Context) {
+            uiView.text = text
+            uiView.delegate = context.coordinator
         }
         
-        func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-            searchBar.resignFirstResponder()
+        func makeCoordinator() -> Coordinator {
+            Coordinator(text: $text)
+        }
+        
+        class Coordinator: NSObject, UISearchBarDelegate {
+            @Binding var text: String
+            
+            init(text: Binding<String>) {
+                _text = text
+            }
+            
+            func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+                text = searchText
+            }
+            
+            func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+                searchBar.resignFirstResponder()
+            }
         }
     }
 }

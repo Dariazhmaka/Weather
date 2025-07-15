@@ -9,8 +9,8 @@ import Foundation
 import CoreLocation
 
 class WeatherAPIService {
-    private let apiKey = "b943851aae3fcea77ee2b62c61d864db"
-    private let baseUrl = "https://api.openweathermap.org/data/2.5"
+    static let apiKey = "b943851aae3fcea77ee2b62c61d864db"
+    static let baseUrl = "https://api.openweathermap.org/data/2.5"
     
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -20,21 +20,21 @@ class WeatherAPIService {
     
     func fetchWeather(latitude: Double, longitude: Double,
                      completion: @escaping (Result<WeatherDataModel, WeatherError>) -> Void) {
-        let urlString = "\(baseUrl)/weather?lat=\(latitude)&lon=\(longitude)&appid=\(apiKey)&units=metric"
+        let urlString = "\(WeatherAPIService.baseUrl)/weather?lat=\(latitude)&lon=\(longitude)&appid=\(WeatherAPIService.apiKey)&units=metric"
         
         performRequest(urlString: urlString, completion: completion)
     }
     
     func fetchWeather(for city: String, completion: @escaping (Result<WeatherDataModel, WeatherError>) -> Void) {
         let encodedCity = city.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? city
-        let urlString = "\(baseUrl)/weather?q=\(encodedCity)&appid=\(apiKey)&units=metric"
+        let urlString = "\(WeatherAPIService.baseUrl)/weather?q=\(encodedCity)&appid=\(WeatherAPIService.apiKey)&units=metric"
         
         performRequest(urlString: urlString, completion: completion)
     }
     
     func fetchForecast(latitude: Double, longitude: Double,
                       completion: @escaping (Result<ForecastData, WeatherError>) -> Void) {
-        let urlString = "\(baseUrl)/forecast?lat=\(latitude)&lon=\(longitude)&appid=\(apiKey)&units=metric"
+        let urlString = "\(WeatherAPIService.baseUrl)/forecast?lat=\(latitude)&lon=\(longitude)&appid=\(WeatherAPIService.apiKey)&units=metric"
         
         guard let url = URL(string: urlString) else {
             completion(.failure(.invalidURL))
@@ -73,8 +73,6 @@ class WeatherAPIService {
         }.resume()
     }
     
-
-    
     private func groupDailyForecast(from list: [ForecastResponse.ForecastItem]) -> [DailyForecastModel] {
         let calendar = Calendar.current
         let grouped = Dictionary(grouping: list) { item -> Date in
@@ -96,6 +94,7 @@ class WeatherAPIService {
         }.sorted { $0.date < $1.date }
     }
 }
+
 extension WeatherAPIService {
     private func performRequest(urlString: String,
                               completion: @escaping (Result<WeatherDataModel, WeatherError>) -> Void) {
@@ -141,6 +140,7 @@ extension WeatherAPIService {
         }.resume()
     }
 }
+
 struct ForecastData {
     let hourly: [HourlyForecastModel]
     let daily: [DailyForecastModel]
