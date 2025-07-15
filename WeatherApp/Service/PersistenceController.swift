@@ -17,15 +17,15 @@ class Settings {
         set { UserDefaults.standard.set(newValue, forKey: "lastCity") }
     }
     
-    var lastLocation: (lat: Double, lon: Double)? {
+    var lastLocation: (lat: Double, lon: Double) {
         get {
             let lat = UserDefaults.standard.double(forKey: "lastLat")
             let lon = UserDefaults.standard.double(forKey: "lastLon")
             return (lat, lon) 
         }
         set {
-            UserDefaults.standard.set(newValue?.lat, forKey: "lastLat")
-            UserDefaults.standard.set(newValue?.lon, forKey: "lastLon")
+            UserDefaults.standard.set(newValue.lat, forKey: "lastLat")
+            UserDefaults.standard.set(newValue.lon, forKey: "lastLon")
         }
     }
 }
