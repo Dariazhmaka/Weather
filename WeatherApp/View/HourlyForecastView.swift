@@ -17,13 +17,14 @@ struct HourlyForecastView: View {
                     VStack(spacing: 8) {
                         Text(hour.time)
                             .font(.caption)
+                            .foregroundColor(ColorManager.textPrimary)
                         Image(systemName: hour.icon)
                             .symbolRenderingMode(.multicolor)
                             .font(.title2)
-                        Text("\(Int(hour.temp))°")
+                        Text(StringManager.temperatureString(hour.temp))
                             .font(.headline)
+                            .foregroundColor(ColorManager.textPrimary)
                     }
-                    .foregroundColor(.white)
                     .frame(width: 60)
                 }
             }

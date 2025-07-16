@@ -89,42 +89,43 @@ struct HomeView: View {
             withAnimation {
                 isRefreshing = newValue
             }
-        }    }
+        }
+    }
         
     private var weatherBackground: some View {
         Group {
             switch effectType {
             case .rain, .thunderstorm:
                 LinearGradient(colors: [
-                    Color(red: 0.1, green: 0.1, blue: 0.3),
-                    Color(red: 0.2, green: 0.2, blue: 0.4)
+                    ColorManager.rainBackgroundTop,
+                    ColorManager.rainBackgroundBottom
                 ], startPoint: .top, endPoint: .bottom)
                 
             case .snow:
                 LinearGradient(colors: [
-                    Color(red: 0.15, green: 0.2, blue: 0.3),
-                    Color(red: 0.25, green: 0.3, blue: 0.4)
+                    ColorManager.snowBackgroundTop,
+                    ColorManager.snowBackgroundBottom
                 ], startPoint: .top, endPoint: .bottom)
                 
             case .sun:
                 AngularGradient(
                     gradient: Gradient(colors: [
-                        Color(red: 0.3, green: 0.5, blue: 0.9),
-                        Color(red: 0.5, green: 0.7, blue: 1.0)
+                        ColorManager.sunBackgroundTop,
+                        ColorManager.sunBackgroundBottom
                     ]),
                     center: .topLeading,
                     angle: .degrees(45)
                 )
             case .clouds, .fog:
                 LinearGradient(colors: [
-                    Color(red: 0.3, green: 0.3, blue: 0.4),
-                    Color(red: 0.4, green: 0.4, blue: 0.5)
+                    ColorManager.cloudsBackgroundTop,
+                    ColorManager.cloudsBackgroundBottom
                 ], startPoint: .top, endPoint: .bottom)
                 
             default:
                 LinearGradient(colors: [
-                    Color(red: 0.1, green: 0.2, blue: 0.4),
-                    Color(red: 0.2, green: 0.1, blue: 0.3)
+                    ColorManager.defaultBackgroundTop,
+                    ColorManager.defaultBackgroundBottom
                 ], startPoint: .topLeading, endPoint: .bottomTrailing)
             }
         }
@@ -135,29 +136,29 @@ struct HomeView: View {
         VStack(spacing: 5) {
             Text(weather.city)
                 .font(.system(size: 32, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(ColorManager.textPrimary)
                 .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
                 .opacity(getTitleOpacity)
             
             Text("\(Int(weather.temperature))°")
                 .font(.system(size: 72, weight: .thin))
-                .foregroundColor(.white)
+                .foregroundColor(ColorManager.textPrimary)
                 .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
                 .opacity(getTempOpacity)
                 .padding(.top, -10)
             
             Text(weather.condition.localizedCapitalized)
                 .font(.system(size: 20, weight: .medium, design: .rounded))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(ColorManager.textSecondary)
                 .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                 .opacity(getConditionOpacity)
             
             HStack(spacing: 16) {
-                Text("Макс: \(Int(weather.highTemp))°")
-                Text("Мин: \(Int(weather.lowTemp))°")
+                Text("\(StringManager.maxTemp): \(Int(weather.highTemp))°")
+                Text("\(StringManager.minTemp): \(Int(weather.lowTemp))°")
             }
             .font(.system(size: 16, weight: .medium, design: .rounded))
-            .foregroundColor(.white.opacity(0.8))
+            .foregroundColor(ColorManager.textSecondary)
             .opacity(getHighLowOpacity)
         }
         .offset(y: -offset)
@@ -168,7 +169,7 @@ struct HomeView: View {
     private var weatherSummaryCard: some View {
         VStack(spacing: 16) {
             Divider()
-                .background(Color.white.opacity(0.3))
+                .background(ColorManager.dividerColor)
             
             if let sunrise = weather.sunrise, let sunset = weather.sunset {
                 HStack {
@@ -181,7 +182,7 @@ struct HomeView: View {
                     Text(formatTime(sunset))
                 }
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(ColorManager.textSecondary)
                 .padding(.horizontal)
             }
         }
@@ -192,7 +193,7 @@ struct HomeView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .stroke(.white.opacity(0.1), lineWidth: 1)
+                .stroke(ColorManager.cardStroke, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
     }
@@ -208,11 +209,11 @@ struct HomeView: View {
         VStack(spacing: 12) {
             HStack {
                 Image(systemName: "clock")
-                Text("ПОЧАСОВОЙ ПРОГНОЗ")
+                Text(StringManager.hourlyForecast)
                     .font(.system(size: 14, weight: .semibold))
                 Spacer()
             }
-            .foregroundColor(.white.opacity(0.9))
+            .foregroundColor(ColorManager.textSecondary)
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
@@ -231,7 +232,7 @@ struct HomeView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .stroke(.white.opacity(0.1), lineWidth: 1)
+                .stroke(ColorManager.cardStroke, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
     }
@@ -240,29 +241,29 @@ struct HomeView: View {
         VStack(spacing: 16) {
             HStack {
                 Image(systemName: "chart.bar.fill")
-                Text("ДЕТАЛИ ПОГОДЫ")
+                Text(StringManager.weatherDetails)
                     .font(.system(size: 14, weight: .semibold))
                 Spacer()
             }
-            .foregroundColor(.white)
+            .foregroundColor(ColorManager.textPrimary)
             
             HStack(spacing: 16) {
                 WeatherDetailItem(
                     icon: "humidity",
-                    value: "\(weather.humidity)%",
-                    label: "Влажность"
+                    value: StringManager.humidityString(weather.humidity),
+                    label: StringManager.humidity
                 )
                 
                 WeatherDetailItem(
                     icon: "wind",
-                    value: "\(String(format: "%.1f", weather.windSpeed)) м/с",
-                    label: "Ветер"
+                    value: StringManager.windSpeedString(weather.windSpeed),
+                    label: StringManager.wind
                 )
                 
                 WeatherDetailItem(
                     icon: "thermometer",
-                    value: "\(weather.pressure ?? 1012) гПа",
-                    label: "Давление"
+                    value: StringManager.pressureString(weather.pressure ?? 1012),
+                    label: StringManager.pressure
                 )
             }
             
@@ -270,11 +271,10 @@ struct HomeView: View {
                 if let feelsLike = weather.feelsLike {
                     WeatherDetailCard(
                         icon: "thermometer.sun.fill",
-                        title: "Ощущается",
-                        value: "\(Int(feelsLike))°"
+                        title: StringManager.feelsLike,
+                        value: StringManager.temperatureString(feelsLike)
                     )
                 }
-                
             }
         }
         .padding(16)
@@ -285,11 +285,11 @@ struct HomeView: View {
         VStack(spacing: 12) {
             HStack {
                 Image(systemName: "calendar")
-                Text("ПРОГНОЗ НА НЕДЕЛЮ")
+                Text(StringManager.weeklyForecast)
                     .font(.system(size: 14, weight: .semibold))
                 Spacer()
             }
-            .foregroundColor(.white.opacity(0.9))
+            .foregroundColor(ColorManager.textSecondary)
             
             VStack(spacing: 12) {
                 ForEach(weather.dailyForecast.prefix(7)) { day in
@@ -302,7 +302,7 @@ struct HomeView: View {
                     
                     if day.id != weather.dailyForecast.prefix(7).last?.id {
                         Divider()
-                            .background(Color.white.opacity(0.3))
+                            .background(ColorManager.dividerColor)
                     }
                 }
             }
@@ -314,11 +314,10 @@ struct HomeView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .stroke(.white.opacity(0.1), lineWidth: 1)
+                .stroke(ColorManager.cardStroke, lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
     }
-    
     
     private func getTitleOffset() -> CGFloat {
         if offset < 0 {
@@ -340,7 +339,6 @@ struct HomeView: View {
             $0.timeDate < $1.timeDate
         }
     }
-    
     
     private var getTitleOpacity: Double {
         let titleOffset = -getTitleOffset()
@@ -373,16 +371,16 @@ struct HourForecastItem: View {
         VStack(spacing: 8) {
             Text(time)
                 .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(ColorManager.textPrimary)
             
             Image(systemName: icon)
                 .symbolRenderingMode(.multicolor)
                 .font(.system(size: 22))
                 .frame(height: 30)
             
-            Text("\(Int(temp))°")
+            Text(StringManager.temperatureString(temp))
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(ColorManager.textPrimary)
         }
         .frame(width: 60)
     }
@@ -411,7 +409,7 @@ struct DailyForecastRow: View {
             
             Spacer()
             
-            Text("\(Int(day.lowTemp))°")
+            Text(StringManager.temperatureString(day.lowTemp))
                 .font(.system(size: 16, weight: .medium, design: .rounded))
                 .frame(width: 36, alignment: .trailing)
                 .opacity(0.8)
@@ -419,20 +417,20 @@ struct DailyForecastRow: View {
             temperatureBar(low: day.lowTemp, high: day.highTemp)
                 .frame(maxWidth: 100)
             
-            Text("\(Int(day.highTemp))°")
+            Text(StringManager.temperatureString(day.highTemp))
                 .font(.system(size: 16, weight: .medium, design: .rounded))
                 .frame(width: 36, alignment: .leading)
         }
-        .foregroundColor(isSelected ? .white : .white.opacity(0.7))
+        .foregroundColor(isSelected ? ColorManager.textPrimary : ColorManager.textSecondary)
         .padding(.vertical, 8)
         .padding(.horizontal, 8)
-        .background(isSelected ? Color.white.opacity(0.2) : Color.clear)
+        .background(isSelected ? ColorManager.selectedButtonBackground : Color.clear)
         .cornerRadius(12)
     }
     
     private func dayName(for date: Date) -> String {
         if Calendar.current.isDateInToday(date) {
-            return "Сегодня"
+            return StringManager.today
         } else {
             return dayFormatter.string(from: date).capitalized
         }
@@ -443,7 +441,7 @@ struct DailyForecastRow: View {
             ZStack(alignment: .leading) {
                 Capsule()
                     .frame(height: 4)
-                    .foregroundColor(.white.opacity(0.3))
+                    .foregroundColor(ColorManager.dividerColor)
                 
                 let range = high - low
                 let normalizedRange = min(max(range / 30, 0), 1)
@@ -476,7 +474,7 @@ struct WeatherDetailItem: View {
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .opacity(0.8)
         }
-        .foregroundColor(.white)
+        .foregroundColor(ColorManager.textPrimary)
         .frame(maxWidth: .infinity)
     }
 }
@@ -499,10 +497,10 @@ struct WeatherDetailCard: View {
             Text(value)
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
         }
-        .foregroundColor(.white)
+        .foregroundColor(ColorManager.textPrimary)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color.white.opacity(0.1))
+        .background(ColorManager.buttonBackground)
         .cornerRadius(12)
     }
 }
@@ -516,7 +514,7 @@ struct RefreshIndicator: View {
             
             Image(systemName: "arrow.clockwise")
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(ColorManager.textPrimary)
                 .rotationEffect(.degrees(isRotating ? 360 : 0))
                 .animation(
                     .linear(duration: 1).repeatForever(autoreverses: false),

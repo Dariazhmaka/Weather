@@ -35,7 +35,11 @@ class WeatherManager: ObservableObject {
     }
         
     func addCity(_ city: SavedCity) {
-        if !savedCities.contains(where: { $0.id == city.id }) {
+        let cityExists = savedCities.contains { savedCity in
+            savedCity.name.lowercased() == city.name.lowercased()
+        }
+        
+        if !cityExists {
             savedCities.append(city)
             saveCities()
         }

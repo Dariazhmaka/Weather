@@ -32,11 +32,11 @@ struct ContentView: View {
                         Button(action: { showingCitiesList.toggle() }) {
                             HStack {
                                 Image(systemName: "list.bullet")
-                                Text("Мои города")
+                                Text(StringManager.myCities)
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color.white.opacity(0.2))
+                            .background(ColorManager.buttonBackground)
                             .clipShape(Capsule())
                         }
                         .padding(.leading)
@@ -46,7 +46,7 @@ struct ContentView: View {
                         Button(action: { showingSearch.toggle() }) {
                             Image(systemName: "magnifyingglass")
                                 .padding(10)
-                                .background(Color.white.opacity(0.2))
+                                .background(ColorManager.buttonBackground)
                                 .clipShape(Circle())
                         }
                         .padding(.trailing)
@@ -79,14 +79,14 @@ struct ContentView: View {
     
     var welcomeView: some View {
         VStack {
-            Text("Добро пожаловать в Погода")
+            Text(StringManager.welcomeTitle)
                 .font(.title)
             
-            Button("Получить погоду", action: loadInitialData)
+            Button(StringManager.getWeather, action: loadInitialData)
                 .buttonStyle(.borderedProminent)
                 .padding(.top, 20)
         }
-        .foregroundColor(.white)
+        .foregroundColor(ColorManager.textPrimary)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     

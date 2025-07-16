@@ -13,11 +13,11 @@ struct ErrorView: View {
     
     var body: some View {
         VStack {
-            Text("Ошибка загрузки")
+            Text(StringManager.errorTitle)
                 .font(.title)
             Text(error.localizedDescription)
                 .padding()
-            Button("Повторить", action: retryAction)
+            Button(StringManager.retry, action: retryAction)
                 .buttonStyle(.borderedProminent)
         }
     }

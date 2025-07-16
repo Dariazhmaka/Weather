@@ -27,6 +27,7 @@ struct DailyForecastView: View {
                         Text(dayName(for: day.date))
                             .font(.subheadline)
                             .frame(width: 80, alignment: .leading)
+                            .foregroundColor(Calendar.current.isDate(day.date, inSameDayAs: selectedDate) ? ColorManager.textPrimary : ColorManager.textSecondary)
                         
                         Image(systemName: day.icon)
                             .symbolRenderingMode(.multicolor)
@@ -34,22 +35,23 @@ struct DailyForecastView: View {
                         
                         Spacer()
                         
-                        Text("\(Int(day.lowTemp))°")
+                        Text(StringManager.temperatureString(day.lowTemp))
                             .frame(width: 36, alignment: .trailing)
+                            .foregroundColor(ColorManager.textPrimary)
                         
                         temperatureRangeView(lowTemp: day.lowTemp, highTemp: day.highTemp)
                             .frame(maxWidth: 100)
                         
-                        Text("\(Int(day.highTemp))°")
+                        Text(StringManager.temperatureString(day.highTemp))
                             .frame(width: 36, alignment: .leading)
+                            .foregroundColor(ColorManager.textPrimary)
                     }
-                    .foregroundColor(Calendar.current.isDate(day.date, inSameDayAs: selectedDate) ? .white : .white.opacity(0.7))
                     .padding(.vertical, 5)
                 }
                 
                 if day.id != dailyData.prefix(7).last?.id {
                     Divider()
-                        .background(Color.white.opacity(0.5))
+                        .background(ColorManager.dividerColor)
                 }
             }
         }
@@ -60,14 +62,14 @@ struct DailyForecastView: View {
             ZStack(alignment: .leading) {
                 Capsule()
                     .frame(height: 4)
-                    .foregroundColor(.white.opacity(0.3))
+                    .foregroundColor(ColorManager.dividerColor)
                 
                 let range = highTemp - lowTemp
                 let normalizedRange = min(max(range / 30, 0), 1)
                 
                 Capsule()
                     .frame(width: proxy.size.width * normalizedRange, height: 4)
-                    .foregroundColor(.white)
+                    .foregroundColor(ColorManager.textPrimary)
                     .offset(x: proxy.size.width * (lowTemp / 30))
             }
         }
@@ -76,7 +78,7 @@ struct DailyForecastView: View {
     
     private func dayName(for date: Date) -> String {
         if Calendar.current.isDateInToday(date) {
-            return "Сегодня"
+            return StringManager.today
         } else {
             return dayFormatter.string(from: date)
         }

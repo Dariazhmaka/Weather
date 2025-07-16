@@ -28,16 +28,16 @@ struct DaySelectionView: View {
                             Text(dateFormatter.string(from: date))
                                 .font(.subheadline)
                             if Calendar.current.isDate(date, inSameDayAs: Date()) {
-                                Text("Сегодня")
+                                Text(StringManager.today)
                                     .font(.caption2)
                             }
                         }
-                        .foregroundColor(Calendar.current.isDate(date, inSameDayAs: selectedDate) ? .white : .white.opacity(0.6))
+                        .foregroundColor(Calendar.current.isDate(date, inSameDayAs: selectedDate) ? ColorManager.textPrimary : ColorManager.textSecondary)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 12)
                         .background(
                             Calendar.current.isDate(date, inSameDayAs: selectedDate) ?
-                            Color.white.opacity(0.3) : Color.clear
+                            ColorManager.selectedButtonBackground : Color.clear
                         )
                         .cornerRadius(10)
                     }
