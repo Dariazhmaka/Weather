@@ -14,55 +14,58 @@ struct SearchView: View {
     @State private var longitude = ""
     @Environment(\.presentationMode) var presentationMode
     
-    private let sampleCities = [
-        "New York", "London", "Paris", "Tokyo", "Berlin",
-        "Moscow", "Sydney", "Dubai", "Singapore", "Shanghai",
-        "Rome", "Madrid", "Toronto", "Chicago", "Los Angeles"
-    ]
-    
     private var filteredCities: [String] {
-        searchText.isEmpty ? sampleCities : sampleCities.filter { $0.lowercased().contains(searchText.lowercased()) }
+        searchText.isEmpty ?
+            Strings.SearchView.popularCities.components(separatedBy: ", ") :
+            Strings.SearchView.popularCities.components(separatedBy: ", ").filter {
+                $0.lowercased().contains(searchText.lowercased())
+            }
     }
     
     var body: some View {
         NavigationView {
             VStack(spacing: 15) {
-                SearchBar(text: $searchText, placeholder: "Выбрать город")
+                SearchBar(text: $searchText, placeholder: Strings.SearchView.searchCity)
                     .padding(.horizontal)
                 
                 Button(action: useCurrentLocation) {
                     HStack {
                         Image(systemName: "location.fill")
-                        Text("Мое местоположение")
+                            .foregroundColor(ColorManager.Button.icon)
+                        Text(Strings.Common.myLocation)
+                            .foregroundColor(ColorManager.Button.text)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.blue.opacity(0.2))
+                    .background(ColorManager.Button.background)
                     .cornerRadius(10)
                 }
                 .padding(.horizontal)
                 
                 VStack(spacing: 10) {
-                    Text("Выбор по координитам:")
+                    Text(Strings.SearchView.coordinatesPrompt)
                         .font(.caption)
+                        .foregroundColor(ColorManager.Text.secondary)
                     
                     HStack {
-                        TextField("Latitude", text: $latitude)
+                        TextField(Strings.SearchView.latitude, text: $latitude)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .keyboardType(.numbersAndPunctuation)
+                            .colorScheme(.dark)
                         
-                        TextField("Longitude", text: $longitude)
+                        TextField(Strings.SearchView.longitude, text: $longitude)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .keyboardType(.numbersAndPunctuation)
+                            .colorScheme(.dark)
                     }
                     .padding(.horizontal)
                     
                     Button(action: searchByCoordinates) {
-                        Text("выбор по координатам")
+                        Text(Strings.SearchView.searchByCoordinates)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
+                            .background(ColorManager.Accent.primary)
+                            .foregroundColor(ColorManager.Button.text)
                             .cornerRadius(10)
                     }
                     .padding(.horizontal)
@@ -70,23 +73,29 @@ struct SearchView: View {
                 }
                 
                 List {
-                    Section(header: Text("Популярные города")) {
+                    Section(header:
+                        Text(Strings.SearchView.popularCities)
+                            .foregroundColor(ColorManager.Text.secondary)
+                    ) {
                         ForEach(filteredCities, id: \.self) { city in
                             Button(action: { searchByCity(city) }) {
                                 Text(city)
+                                    .foregroundColor(ColorManager.Text.primary)
                             }
                         }
                     }
                 }
-                .listStyle(InsetGroupedListStyle())
+                .background(ColorManager.Background.primary)
             }
-            .navigationTitle("Выбрать")
+            .background(ColorManager.Background.primary)
+            .navigationTitle(Strings.SearchView.searchCity)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Закрыть") {
+                    Button(Strings.Common.close) {
                         presentationMode.wrappedValue.dismiss()
                     }
+                    .foregroundColor(ColorManager.Button.text)
                 }
             }
         }

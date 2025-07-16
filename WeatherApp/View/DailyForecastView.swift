@@ -13,6 +13,7 @@ struct DailyForecastView: View {
     
     private let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ru_RU")
         formatter.dateFormat = "EEEE"
         return formatter
     }()
@@ -26,7 +27,12 @@ struct DailyForecastView: View {
                     HStack(spacing: 15) {
                         Text(dayName(for: day.date))
                             .font(.subheadline)
-                            .frame(width: 80, alignment: .leading)
+                            .frame(width: 100, alignment: .leading)
+                            .foregroundColor(
+                                Calendar.current.isDate(day.date, inSameDayAs: selectedDate)
+                                ? ColorManager.Text.primary
+                                : ColorManager.Text.secondary
+                            )
                         
                         Image(systemName: day.icon)
                             .symbolRenderingMode(.multicolor)
@@ -36,23 +42,37 @@ struct DailyForecastView: View {
                         
                         Text("\(Int(day.lowTemp))°")
                             .frame(width: 36, alignment: .trailing)
+                            .foregroundColor(ColorManager.Text.secondary)
                         
                         temperatureRangeView(lowTemp: day.lowTemp, highTemp: day.highTemp)
                             .frame(maxWidth: 100)
                         
                         Text("\(Int(day.highTemp))°")
                             .frame(width: 36, alignment: .leading)
+                            .foregroundColor(ColorManager.Text.primary)
                     }
-                    .foregroundColor(Calendar.current.isDate(day.date, inSameDayAs: selectedDate) ? .white : .white.opacity(0.7))
-                    .padding(.vertical, 5)
+                    .padding(.vertical, 8)
+                    .background(
+                        Calendar.current.isDate(day.date, inSameDayAs: selectedDate)
+                        ? ColorManager.UI.selectedItem
+                        : Color.clear
+                    )
+                    .cornerRadius(8)
                 }
                 
                 if day.id != dailyData.prefix(7).last?.id {
                     Divider()
-                        .background(Color.white.opacity(0.5))
+                        .background(ColorManager.Divider.background)
                 }
             }
         }
+        .padding(.vertical)
+        .background(ColorManager.Card.background)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(ColorManager.Card.border, lineWidth: 1)
+        )
     }
     
     private func temperatureRangeView(lowTemp: Double, highTemp: Double) -> some View {
@@ -60,14 +80,14 @@ struct DailyForecastView: View {
             ZStack(alignment: .leading) {
                 Capsule()
                     .frame(height: 4)
-                    .foregroundColor(.white.opacity(0.3))
+                    .foregroundColor(ColorManager.TemperatureBar.background)
                 
                 let range = highTemp - lowTemp
                 let normalizedRange = min(max(range / 30, 0), 1)
                 
                 Capsule()
                     .frame(width: proxy.size.width * normalizedRange, height: 4)
-                    .foregroundColor(.white)
+                    .foregroundColor(ColorManager.TemperatureBar.fill)
                     .offset(x: proxy.size.width * (lowTemp / 30))
             }
         }
@@ -75,10 +95,25 @@ struct DailyForecastView: View {
     }
     
     private func dayName(for date: Date) -> String {
-        if Calendar.current.isDateInToday(date) {
-            return "Сегодня"
-        } else {
-            return dayFormatter.string(from: date)
-        }
+        Calendar.current.isDateInToday(date)
+        ? Strings.Common.today
+        : dayFormatter.string(from: date).capitalized
+    }
+}
+
+struct DailyForecastView_Previews: PreviewProvider {
+    static var previews: some View {
+        let sampleData = [
+            DailyForecastModel(date: Date(), highTemp: 25, lowTemp: 18, icon: "sun.max.fill"),
+            DailyForecastModel(date: Calendar.current.date(byAdding: .day, value: 1, to: Date())!,
+            highTemp: 23, lowTemp: 16, icon: "cloud.sun.fill")
+        ]
+        
+        DailyForecastView(
+            dailyData: sampleData,
+            selectedDate: .constant(Date())
+        )
+        .padding()
+        .preferredColorScheme(.dark)
     }
 }

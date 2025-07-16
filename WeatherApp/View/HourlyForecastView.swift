@@ -23,7 +23,7 @@ struct HourlyForecastView: View {
                         Text("\(Int(hour.temp))°")
                             .font(.headline)
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(ColorManager.Text.primary)
                     .frame(width: 60)
                 }
             }

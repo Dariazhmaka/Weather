@@ -8,20 +8,36 @@
 import SwiftUI
 
 struct WeatherDetailsView: View {
-    var weather: WeatherDataModel 
+    var weather: WeatherDataModel
     
     var body: some View {
         VStack(spacing: 15) {
-            DetailRow(icon: "humidity", title: "Влажность", value: "\(weather.humidity)%")
+            DetailRow(
+                icon: "humidity",
+                title: Strings.WeatherDetails.humidity,
+                value: "\(weather.humidity)%"
+            )
+            
             Divider()
-                .background(Color.white.opacity(0.5))
-            DetailRow(icon: "wind", title: "Ветер", value: "\(String(format: "%.1f", weather.windSpeed)) м/с")
+                .background(ColorManager.Divider.background)
+            
+            DetailRow(
+                icon: "wind",
+                title: Strings.WeatherDetails.wind,
+                value: "\(String(format: "%.1f", weather.windSpeed)) \(Strings.WeatherDetails.windSpeedUnit)"
+            )
+            
             Divider()
-                .background(Color.white.opacity(0.5))
-            DetailRow(icon: "thermometer", title: "Давление", value: "1012 Пa")
+                .background(ColorManager.Divider.background)
+            
+            DetailRow(
+                icon: "thermometer",
+                title: Strings.WeatherDetails.pressure,
+                value: "\(weather.pressure ?? 1012) \(Strings.WeatherDetails.pressureUnit)"
+            )
         }
         .padding()
-        .background(Color.white.opacity(0.2))
+        .background(ColorManager.Card.background)
         .cornerRadius(10)
     }
 }

@@ -18,10 +18,11 @@ struct SavedCitiesView: View {
                 ForEach(weatherManager.savedCities) { city in
                     HStack {
                         Text(city.name)
+                            .foregroundColor(ColorManager.Text.primary)
                         Spacer()
                         if city.id == weatherManager.currentCity?.id {
                             Image(systemName: "checkmark")
-                                .foregroundColor(.blue)
+                                .foregroundColor(ColorManager.Accent.primary)
                         }
                     }
                     .contentShape(Rectangle())
@@ -31,24 +32,28 @@ struct SavedCitiesView: View {
                 }
                 .onDelete(perform: deleteCities)
             }
-            .navigationTitle("Мои города")
+            .background(ColorManager.Background.primary)
+            .navigationTitle(Strings.SavedCitiesView.title)
             .navigationBarItems(
-                leading: EditButton(),
+                leading: Button(Strings.Common.edit) {
+                },
                 trailing: HStack {
                     Button(action: { showingAddAlert = true }) {
                         Image(systemName: "plus")
+                            .foregroundColor(ColorManager.Button.text)
                     }
-                    Button("Готово") {
+                    Button(Strings.Common.done) {
                         presentationMode.wrappedValue.dismiss()
                     }
+                    .foregroundColor(ColorManager.Button.text)
                 }
             )
             .alert(isPresented: $showingAddAlert) {
                 Alert(
-                    title: Text("Добавить город"),
-                    message: Text("Добавить текущий город в список?"),
-                    primaryButton: .default(Text("Добавить"), action: addCurrentCity),
-                    secondaryButton: .cancel()
+                    title: Text(Strings.SavedCitiesView.addCityTitle),
+                    message: Text(Strings.SavedCitiesView.addCityMessage),
+                    primaryButton: .default(Text(Strings.Common.add), action: addCurrentCity),
+                    secondaryButton: .cancel(Text(Strings.Common.cancel))
                 )
             }
         }

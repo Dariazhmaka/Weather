@@ -27,7 +27,7 @@ struct CustomStackView<Title: View, Content: View>: View {
                 .frame(height: 38)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading)
-                .background(.ultraThinMaterial, in: CustomCorner(corners: bottomOffset < 38 ? .allCorners : [.topLeft, .topRight], radius: 12))
+                .background(ColorManager.UI.cardBackground, in: CustomCorner(corners: bottomOffset < 38 ? .allCorners : [.topLeft, .topRight], radius: 12))
                 .zIndex(1)
             
             VStack {
@@ -35,7 +35,7 @@ struct CustomStackView<Title: View, Content: View>: View {
                 contentView
                     .padding()
             }
-            .background(.ultraThinMaterial, in: CustomCorner(corners: [.bottomLeft, .bottomRight], radius: 12))
+            .background(ColorManager.UI.cardBackground, in: CustomCorner(corners: [.bottomLeft, .bottomRight], radius: 12))
             .offset(y: topOffset >= 120 ? 0 : -(-topOffset + 120))
             .zIndex(0)
             .clipped()

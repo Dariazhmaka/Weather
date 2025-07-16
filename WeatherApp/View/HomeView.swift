@@ -89,66 +89,32 @@ struct HomeView: View {
             withAnimation {
                 isRefreshing = newValue
             }
-        }    }
-        
-    private var weatherBackground: some View {
-        Group {
-            switch effectType {
-            case .rain, .thunderstorm:
-                LinearGradient(colors: [
-                    Color(red: 0.1, green: 0.1, blue: 0.3),
-                    Color(red: 0.2, green: 0.2, blue: 0.4)
-                ], startPoint: .top, endPoint: .bottom)
-                
-            case .snow:
-                LinearGradient(colors: [
-                    Color(red: 0.15, green: 0.2, blue: 0.3),
-                    Color(red: 0.25, green: 0.3, blue: 0.4)
-                ], startPoint: .top, endPoint: .bottom)
-                
-            case .sun:
-                AngularGradient(
-                    gradient: Gradient(colors: [
-                        Color(red: 0.3, green: 0.5, blue: 0.9),
-                        Color(red: 0.5, green: 0.7, blue: 1.0)
-                    ]),
-                    center: .topLeading,
-                    angle: .degrees(45)
-                )
-            case .clouds, .fog:
-                LinearGradient(colors: [
-                    Color(red: 0.3, green: 0.3, blue: 0.4),
-                    Color(red: 0.4, green: 0.4, blue: 0.5)
-                ], startPoint: .top, endPoint: .bottom)
-                
-            default:
-                LinearGradient(colors: [
-                    Color(red: 0.1, green: 0.2, blue: 0.4),
-                    Color(red: 0.2, green: 0.1, blue: 0.3)
-                ], startPoint: .topLeading, endPoint: .bottomTrailing)
-            }
         }
-        .animation(.easeInOut(duration: 1), value: effectType)
+    }
+    
+    private var weatherBackground: some View {
+        ColorManager.backgroundGradient(for: effectType)
+            .animation(.easeInOut(duration: 1), value: effectType)
     }
     
     private var headerSection: some View {
         VStack(spacing: 5) {
             Text(weather.city)
                 .font(.system(size: 32, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(ColorManager.Text.primary)
                 .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
                 .opacity(getTitleOpacity)
             
             Text("\(Int(weather.temperature))°")
                 .font(.system(size: 72, weight: .thin))
-                .foregroundColor(.white)
+                .foregroundColor(ColorManager.Text.primary)
                 .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
                 .opacity(getTempOpacity)
                 .padding(.top, -10)
             
             Text(weather.condition.localizedCapitalized)
                 .font(.system(size: 20, weight: .medium, design: .rounded))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(ColorManager.Text.secondary)
                 .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                 .opacity(getConditionOpacity)
             
@@ -157,7 +123,7 @@ struct HomeView: View {
                 Text("Мин: \(Int(weather.lowTemp))°")
             }
             .font(.system(size: 16, weight: .medium, design: .rounded))
-            .foregroundColor(.white.opacity(0.8))
+            .foregroundColor(ColorManager.Text.secondary)
             .opacity(getHighLowOpacity)
         }
         .offset(y: -offset)
@@ -168,7 +134,7 @@ struct HomeView: View {
     private var weatherSummaryCard: some View {
         VStack(spacing: 16) {
             Divider()
-                .background(Color.white.opacity(0.3))
+                .background(ColorManager.UI.divider)
             
             if let sunrise = weather.sunrise, let sunset = weather.sunset {
                 HStack {
@@ -181,7 +147,7 @@ struct HomeView: View {
                     Text(formatTime(sunset))
                 }
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(ColorManager.Text.secondary)
                 .padding(.horizontal)
             }
         }
@@ -196,7 +162,7 @@ struct HomeView: View {
         )
         .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
     }
-
+    
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ru_RU")
@@ -212,8 +178,8 @@ struct HomeView: View {
                     .font(.system(size: 14, weight: .semibold))
                 Spacer()
             }
-            .foregroundColor(.white.opacity(0.9))
-            
+            .foregroundColor(ColorManager.Text.secondary)
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
                     ForEach(filteredHourlyData.prefix(24)) { hour in
@@ -280,7 +246,7 @@ struct HomeView: View {
         .padding(16)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
     }
-            
+    
     private var weeklyForecastSection: some View {
         VStack(spacing: 12) {
             HStack {
@@ -362,210 +328,210 @@ struct HomeView: View {
         let progress = -offset / 100
         return Double(1 - progress)
     }
-}
-
-struct HourForecastItem: View {
-    let time: String
-    let temp: Double
-    let icon: String
     
-    var body: some View {
-        VStack(spacing: 8) {
-            Text(time)
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundColor(.white)
-            
-            Image(systemName: icon)
-                .symbolRenderingMode(.multicolor)
-                .font(.system(size: 22))
-                .frame(height: 30)
-            
-            Text("\(Int(temp))°")
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
-        }
-        .frame(width: 60)
-    }
-}
-
-struct DailyForecastRow: View {
-    let day: DailyForecastModel
-    let isSelected: Bool
-    
-    private let dayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
-        formatter.dateFormat = "EEEE"
-        return formatter
-    }()
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            Text(dayName(for: day.date))
-                .font(.system(size: 16, weight: .medium, design: .rounded))
-                .frame(width: 100, alignment: .leading)
-            
-            Image(systemName: day.icon)
-                .symbolRenderingMode(.multicolor)
-                .frame(width: 24)
-            
-            Spacer()
-            
-            Text("\(Int(day.lowTemp))°")
-                .font(.system(size: 16, weight: .medium, design: .rounded))
-                .frame(width: 36, alignment: .trailing)
-                .opacity(0.8)
-            
-            temperatureBar(low: day.lowTemp, high: day.highTemp)
-                .frame(maxWidth: 100)
-            
-            Text("\(Int(day.highTemp))°")
-                .font(.system(size: 16, weight: .medium, design: .rounded))
-                .frame(width: 36, alignment: .leading)
-        }
-        .foregroundColor(isSelected ? .white : .white.opacity(0.7))
-        .padding(.vertical, 8)
-        .padding(.horizontal, 8)
-        .background(isSelected ? Color.white.opacity(0.2) : Color.clear)
-        .cornerRadius(12)
-    }
-    
-    private func dayName(for date: Date) -> String {
-        if Calendar.current.isDateInToday(date) {
-            return "Сегодня"
-        } else {
-            return dayFormatter.string(from: date).capitalized
-        }
-    }
-    
-    private func temperatureBar(low: Double, high: Double) -> some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .frame(height: 4)
-                    .foregroundColor(.white.opacity(0.3))
+    struct HourForecastItem: View {
+        let time: String
+        let temp: Double
+        let icon: String
+        
+        var body: some View {
+            VStack(spacing: 8) {
+                Text(time)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.white)
                 
-                let range = high - low
-                let normalizedRange = min(max(range / 30, 0), 1)
-                
-                Capsule()
-                    .frame(width: proxy.size.width * normalizedRange, height: 4)
-                    .foregroundColor(.blue)
-                    .offset(x: proxy.size.width * (low / 30))
-            }
-        }
-        .frame(height: 4)
-    }
-}
-
-struct WeatherDetailItem: View {
-    let icon: String
-    let value: String
-    let label: String
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .symbolRenderingMode(.multicolor)
-                .font(.system(size: 20))
-            
-            Text(value)
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-            
-            Text(label)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .opacity(0.8)
-        }
-        .foregroundColor(.white)
-        .frame(maxWidth: .infinity)
-    }
-}
-
-struct WeatherDetailCard: View {
-    let icon: String
-    let title: String
-    let value: String
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
                 Image(systemName: icon)
                     .symbolRenderingMode(.multicolor)
+                    .font(.system(size: 22))
+                    .frame(height: 30)
                 
-                Text(title)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                Text("\(Int(temp))°")
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
             }
-            
-            Text(value)
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
+            .frame(width: 60)
         }
-        .foregroundColor(.white)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color.white.opacity(0.1))
-        .cornerRadius(12)
     }
-}
-
-struct RefreshIndicator: View {
-    @State private var isRotating = false
     
-    var body: some View {
-        VStack {
-            Spacer()
-            
-            Image(systemName: "arrow.clockwise")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
-                .rotationEffect(.degrees(isRotating ? 360 : 0))
-                .animation(
-                    .linear(duration: 1).repeatForever(autoreverses: false),
-                    value: isRotating
-                )
-                .onAppear {
-                    isRotating = true
-                }
-                .padding(12)
-                .background(.ultraThinMaterial)
-                .clipShape(Circle())
-                .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 2)
-            
-            Spacer()
-                .frame(height: 30)
-        }
-        .frame(maxWidth: .infinity)
-        .transition(.opacity)
-    }
-}
-
-struct HomeView_Previews: PreviewProvider {
-    static var previews: some View {
-        let sampleWeather = WeatherDataModel(
-            city: "Москва",
-            temperature: 23,
-            highTemp: 26,
-            lowTemp: 18,
-            condition: "Cloudy",
-            humidity: 65,
-            windSpeed: 3.2,
-            latitude: 55.7558,
-            longitude: 37.6176,
-            sunrise: Calendar.current.date(bySettingHour: 5, minute: 30, second: 0, of: Date())!,
-            sunset: Calendar.current.date(bySettingHour: 20, minute: 45, second: 0, of: Date())!,
-            hourlyForecast: [
-                HourlyForecastModel(time: "Сейчас", timeDate: Date(), temp: 23, icon: "cloud.sun.fill"),
-                HourlyForecastModel(time: "12:00", timeDate: Date().addingTimeInterval(3600), temp: 24, icon: "sun.max.fill"),
-                HourlyForecastModel(time: "15:00", timeDate: Date().addingTimeInterval(7200), temp: 25, icon: "sun.max.fill")
-            ],
-            dailyForecast: [
-                DailyForecastModel(date: Date(), highTemp: 26, lowTemp: 18, icon: "cloud.sun.fill"),
-                DailyForecastModel(date: Date().addingTimeInterval(86400), highTemp: 28, lowTemp: 20, icon: "sun.max.fill"),
-                DailyForecastModel(date: Date().addingTimeInterval(172800), highTemp: 24, lowTemp: 17, icon: "cloud.rain.fill")
-            ]
-        )
+    struct DailyForecastRow: View {
+        let day: DailyForecastModel
+        let isSelected: Bool
         
-        HomeView(weather: sampleWeather, topEdge: 0)
-            .preferredColorScheme(.dark)
-            .environmentObject(WeatherManager())
+        private let dayFormatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "ru_RU")
+            formatter.dateFormat = "EEEE"
+            return formatter
+        }()
+        
+        var body: some View {
+            HStack(spacing: 16) {
+                Text(dayName(for: day.date))
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .frame(width: 100, alignment: .leading)
+                
+                Image(systemName: day.icon)
+                    .symbolRenderingMode(.multicolor)
+                    .frame(width: 24)
+                
+                Spacer()
+                
+                Text("\(Int(day.lowTemp))°")
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .frame(width: 36, alignment: .trailing)
+                    .opacity(0.8)
+                
+                temperatureBar(low: day.lowTemp, high: day.highTemp)
+                    .frame(maxWidth: 100)
+                
+                Text("\(Int(day.highTemp))°")
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .frame(width: 36, alignment: .leading)
+            }
+            .foregroundColor(isSelected ? .white : .white.opacity(0.7))
+            .padding(.vertical, 8)
+            .padding(.horizontal, 8)
+            .background(isSelected ? Color.white.opacity(0.2) : Color.clear)
+            .cornerRadius(12)
+        }
+        
+        private func dayName(for date: Date) -> String {
+            if Calendar.current.isDateInToday(date) {
+                return "Сегодня"
+            } else {
+                return dayFormatter.string(from: date).capitalized
+            }
+        }
+        
+        private func temperatureBar(low: Double, high: Double) -> some View {
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .frame(height: 4)
+                        .foregroundColor(.white.opacity(0.3))
+                    
+                    let range = high - low
+                    let normalizedRange = min(max(range / 30, 0), 1)
+                    
+                    Capsule()
+                        .frame(width: proxy.size.width * normalizedRange, height: 4)
+                        .foregroundColor(.blue)
+                        .offset(x: proxy.size.width * (low / 30))
+                }
+            }
+            .frame(height: 4)
+        }
+    }
+    
+    struct WeatherDetailItem: View {
+        let icon: String
+        let value: String
+        let label: String
+        
+        var body: some View {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .symbolRenderingMode(.multicolor)
+                    .font(.system(size: 20))
+                
+                Text(value)
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                
+                Text(label)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .opacity(0.8)
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+        }
+    }
+    
+    struct WeatherDetailCard: View {
+        let icon: String
+        let title: String
+        let value: String
+        
+        var body: some View {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: icon)
+                        .symbolRenderingMode(.multicolor)
+                    
+                    Text(title)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                }
+                
+                Text(value)
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(Color.white.opacity(0.1))
+            .cornerRadius(12)
+        }
+    }
+    
+    struct RefreshIndicator: View {
+        @State private var isRotating = false
+        
+        var body: some View {
+            VStack {
+                Spacer()
+                
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.white)
+                    .rotationEffect(.degrees(isRotating ? 360 : 0))
+                    .animation(
+                        .linear(duration: 1).repeatForever(autoreverses: false),
+                        value: isRotating
+                    )
+                    .onAppear {
+                        isRotating = true
+                    }
+                    .padding(12)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
+                    .shadow(color: .black.opacity(0.2), radius: 5, x: 0, y: 2)
+                
+                Spacer()
+                    .frame(height: 30)
+            }
+            .frame(maxWidth: .infinity)
+            .transition(.opacity)
+        }
+    }
+    
+    struct HomeView_Previews: PreviewProvider {
+        static var previews: some View {
+            let sampleWeather = WeatherDataModel(
+                city: "Москва",
+                temperature: 23,
+                highTemp: 26,
+                lowTemp: 18,
+                condition: "Cloudy",
+                humidity: 65,
+                windSpeed: 3.2,
+                latitude: 55.7558,
+                longitude: 37.6176,
+                sunrise: Calendar.current.date(bySettingHour: 5, minute: 30, second: 0, of: Date())!,
+                sunset: Calendar.current.date(bySettingHour: 20, minute: 45, second: 0, of: Date())!,
+                hourlyForecast: [
+                    HourlyForecastModel(time: "Сейчас", timeDate: Date(), temp: 23, icon: "cloud.sun.fill"),
+                    HourlyForecastModel(time: "12:00", timeDate: Date().addingTimeInterval(3600), temp: 24, icon: "sun.max.fill"),
+                    HourlyForecastModel(time: "15:00", timeDate: Date().addingTimeInterval(7200), temp: 25, icon: "sun.max.fill")
+                ],
+                dailyForecast: [
+                    DailyForecastModel(date: Date(), highTemp: 26, lowTemp: 18, icon: "cloud.sun.fill"),
+                    DailyForecastModel(date: Date().addingTimeInterval(86400), highTemp: 28, lowTemp: 20, icon: "sun.max.fill"),
+                    DailyForecastModel(date: Date().addingTimeInterval(172800), highTemp: 24, lowTemp: 17, icon: "cloud.rain.fill")
+                ]
+            )
+            
+            HomeView(weather: sampleWeather, topEdge: 0)
+                .preferredColorScheme(.dark)
+                .environmentObject(WeatherManager())
+        }
     }
 }

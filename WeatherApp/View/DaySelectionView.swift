@@ -13,6 +13,7 @@ struct DaySelectionView: View {
     
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ru_RU")
         formatter.dateFormat = "E d"
         return formatter
     }()
@@ -27,23 +28,47 @@ struct DaySelectionView: View {
                         VStack(spacing: 5) {
                             Text(dateFormatter.string(from: date))
                                 .font(.subheadline)
+                                .foregroundColor(
+                                    Calendar.current.isDate(date, inSameDayAs: selectedDate)
+                                    ? ColorManager.Text.primary
+                                    : ColorManager.Text.secondary
+                                )
+                            
                             if Calendar.current.isDate(date, inSameDayAs: Date()) {
-                                Text("Сегодня")
+                                Text(Strings.DaySelectionView.today)
                                     .font(.caption2)
+                                    .foregroundColor(ColorManager.Text.secondary)
                             }
                         }
-                        .foregroundColor(Calendar.current.isDate(date, inSameDayAs: selectedDate) ? .white : .white.opacity(0.6))
                         .padding(.vertical, 8)
                         .padding(.horizontal, 12)
                         .background(
-                            Calendar.current.isDate(date, inSameDayAs: selectedDate) ?
-                            Color.white.opacity(0.3) : Color.clear
+                            Calendar.current.isDate(date, inSameDayAs: selectedDate)
+                            ? ColorManager.UI.selectedItem
+                            : ColorManager.UI.unselectedItem
                         )
                         .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(ColorManager.UI.cardStroke, lineWidth: 1)
+                        )
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
             .padding(.horizontal)
         }
+    }
+}
+
+struct DaySelectionView_Previews: PreviewProvider {
+    static var previews: some View {
+        let dates = (0..<7).map { Calendar.current.date(byAdding: .day, value: $0, to: Date())! }
+        
+        DaySelectionView(
+            selectedDate: .constant(Date()),
+            availableDates: dates
+        )
+        .preferredColorScheme(.dark)
     }
 }

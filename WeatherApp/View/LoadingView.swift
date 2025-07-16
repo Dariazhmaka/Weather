@@ -11,18 +11,19 @@ struct LoadingView: View {
     var body: some View {
         VStack {
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                .scaleEffect(1.5)
-            Text("Загрузка...")
-                .foregroundColor(.white)
+                .progressViewStyle(CircularProgressViewStyle(tint: ColorManager.Text.primary))
+            Text(Strings.LoadingView.loading)
+                .foregroundColor(ColorManager.Text.primary)
                 .padding(.top, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            LinearGradient(gradient: Gradient(colors: [
-                Color(red: 0.1, green: 0.3, blue: 0.7),
-                Color(red: 0.3, green: 0.1, blue: 0.5)
-            ]), startPoint: .topLeading, endPoint: .bottomTrailing)
-        )
+        .background(ColorManager.Background.primary)
+    }
+}
+
+struct LoadingView_Previews: PreviewProvider {
+    static var previews: some View {
+        LoadingView()
+            .preferredColorScheme(.dark)
     }
 }

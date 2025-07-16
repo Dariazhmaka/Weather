@@ -36,7 +36,6 @@ struct WeatherEffectView: View {
     }
 }
 
-// MARK: - Sunny Weather
 struct SunnyView: View {
     let size: CGSize
     @State private var sunGlow = false
@@ -44,18 +43,16 @@ struct SunnyView: View {
     
     var body: some View {
         ZStack {
-            // Sky gradient
             LinearGradient(gradient: Gradient(colors: [
-                Color(red: 0.35, green: 0.78, blue: 0.98),
-                Color(red: 0.45, green: 0.85, blue: 1.0)
+                ColorManager.Background.sunnyTop,
+                ColorManager.Background.sunnyBottom
             ]), startPoint: .top, endPoint: .bottom)
             
-            // Sun with glow animation
             Circle()
                 .fill(RadialGradient(
                     gradient: Gradient(colors: [
                         .white,
-                        .yellow.opacity(0.3),
+                        ColorManager.Effects.sunGlow,
                         .clear
                     ]),
                     center: .center,
@@ -71,7 +68,6 @@ struct SunnyView: View {
                     value: sunGlow
                 )
             
-            // Sun rays
             SunRaysView()
                 .frame(width: 300, height: 300)
                 .position(x: size.width * 0.8, y: size.height * 0.2)
@@ -82,7 +78,6 @@ struct SunnyView: View {
                     }
                 }
             
-            // Light clouds
             CloudsView(size: size, type: .light, opacityRange: 0.3...0.5)
         }
         .onAppear {
@@ -99,7 +94,7 @@ struct SunRaysView: View {
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                .yellow.opacity(0.4),
+                                ColorManager.Effects.sun.opacity(0.4),
                                 .clear
                             ]),
                             startPoint: .center,
@@ -113,7 +108,6 @@ struct SunRaysView: View {
     }
 }
 
-// MARK: - Rainy Weather
 struct RainyView: View {
     let size: CGSize
     let withThunder: Bool
@@ -121,19 +115,15 @@ struct RainyView: View {
     
     var body: some View {
         ZStack {
-            // Sky gradient
             LinearGradient(gradient: Gradient(colors: [
-                Color(red: 0.2, green: 0.3, blue: 0.4),
-                Color(red: 0.3, green: 0.4, blue: 0.5)
+                ColorManager.Background.rainyTop,
+                ColorManager.Background.rainyBottom
             ]), startPoint: .top, endPoint: .bottom)
             
-            // Dark clouds
             CloudsView(size: size, type: .dark, opacityRange: 0.7...0.9)
             
-            // Rain
             RainView(size: size)
             
-            // Lightning effect
             if withThunder && lightningFlash {
                 Rectangle()
                     .fill(Color.white.opacity(0.3))
@@ -188,7 +178,7 @@ struct RainView: View {
                     .stroke(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                Color.blue.opacity(0.6),
+                                ColorManager.Effects.rain.opacity(0.6),
                                 Color.white.opacity(0.8)
                             ]),
                             startPoint: .top,
@@ -239,7 +229,6 @@ struct RainDropShape: Shape {
     }
 }
 
-// MARK: - Snowy Weather
 struct SnowyView: View {
     let size: CGSize
     @State private var snowflakes: [Snowflake] = []
@@ -262,19 +251,16 @@ struct SnowyView: View {
     
     var body: some View {
         ZStack {
-            // Sky gradient
             LinearGradient(gradient: Gradient(colors: [
-                Color(red: 0.15, green: 0.2, blue: 0.3),
-                Color(red: 0.25, green: 0.3, blue: 0.4)
+                ColorManager.Background.snowyTop,
+                ColorManager.Background.snowyBottom
             ]), startPoint: .top, endPoint: .bottom)
             
-            // Clouds
             CloudsView(size: size, type: .light, opacityRange: 0.4...0.6)
             
-            // Snowflakes
             ForEach(snowflakes) { flake in
                 SnowflakeShape()
-                    .fill(Color.white.opacity(flake.opacity))
+                    .fill(ColorManager.Effects.snow.opacity(flake.opacity))
                     .frame(width: flake.size, height: flake.size)
                     .rotationEffect(.degrees(flake.rotation))
                     .position(x: flake.x, y: flake.y)
@@ -350,38 +336,32 @@ struct SnowflakeShape: Shape {
     }
 }
 
-// MARK: - Cloudy Weather
 struct CloudyView: View {
     let size: CGSize
     
     var body: some View {
         ZStack {
-            // Sky gradient
             LinearGradient(gradient: Gradient(colors: [
-                Color(red: 0.3, green: 0.3, blue: 0.4),
-                Color(red: 0.4, green: 0.4, blue: 0.5)
+                ColorManager.Background.cloudyTop,
+                ColorManager.Background.cloudyBottom
             ]), startPoint: .top, endPoint: .bottom)
             
-            // Clouds
             CloudsView(size: size, type: .medium, opacityRange: 0.5...0.8)
         }
     }
 }
 
-// MARK: - Foggy Weather
 struct FoggyView: View {
     let size: CGSize
     @State private var fogOpacity: Double = 0
     
     var body: some View {
         ZStack {
-            // Sky gradient
             LinearGradient(gradient: Gradient(colors: [
-                Color(red: 0.4, green: 0.4, blue: 0.5),
-                Color(red: 0.5, green: 0.5, blue: 0.6)
+                ColorManager.Background.foggyTop,
+                ColorManager.Background.foggyBottom
             ]), startPoint: .top, endPoint: .bottom)
             
-            // Fog layers
             ForEach(0..<3) { i in
                 FogLayer(depth: Double(i) / 3)
                     .opacity(fogOpacity)
@@ -404,8 +384,8 @@ struct FogLayer: View {
             .fill(
                 LinearGradient(
                     gradient: Gradient(colors: [
-                        Color.white.opacity(0.1 + depth * 0.1),
-                        Color.white.opacity(0.3 + depth * 0.1)
+                        ColorManager.Effects.fog.opacity(0.1 + depth * 0.1),
+                        ColorManager.Effects.fog.opacity(0.3 + depth * 0.1)
                     ]),
                     startPoint: .top,
                     endPoint: .bottom
@@ -424,7 +404,6 @@ struct FogLayer: View {
     }
 }
 
-// MARK: - Clouds Component
 enum CloudType {
     case light
     case medium
@@ -490,9 +469,9 @@ struct CloudsView: View {
     
     private var cloudColor: Color {
         switch type {
-        case .light: return .white
-        case .medium: return Color(white: 0.8)
-        case .dark: return Color(white: 0.6)
+        case .light: return ColorManager.Effects.cloudLight
+        case .medium: return ColorManager.Effects.cloudMedium
+        case .dark: return ColorManager.Effects.cloudDark
         }
     }
     
@@ -563,16 +542,16 @@ struct CloudShape2: Shape {
 extension WeatherEffectManager {
     static func conditionFromIcon(_ icon: String) -> String {
         if icon.contains("sun") {
-            return "clear"
+            return Strings.WeatherConditions.clear
         } else if icon.contains("cloud") {
-            return "clouds"
+            return Strings.WeatherConditions.clouds
         } else if icon.contains("rain") {
-            return "rain"
+            return Strings.WeatherConditions.rain
         } else if icon.contains("snow") {
-            return "snow"
+            return Strings.WeatherConditions.snow
         } else if icon.contains("bolt") {
-            return "thunderstorm"
+            return Strings.WeatherConditions.thunderstorm
         }
-        return "clear"
+        return Strings.WeatherConditions.clear
     }
 }
