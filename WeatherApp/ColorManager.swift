@@ -24,8 +24,10 @@ struct ColorManager {
     static let defaultBackgroundTop = Color(red: 0.1, green: 0.2, blue: 0.4)
     static let defaultBackgroundBottom = Color(red: 0.2, green: 0.1, blue: 0.3)
     
-    static let buttonBackground = Color.blue.opacity(0.2)
-    static let selectedButtonBackground = Color.white.opacity(0.3)
+    static let buttonBackground = Color.blue.opacity(0.4)
+    static let selectedButtonBackground = Color.white.opacity(0.5)
+    static let buttonIconColor = Color.white
+    static let buttonTextColor = Color.white
     static let cardStroke = Color.white.opacity(0.1)
     static let dividerColor = Color.white.opacity(0.3)
     static let textPrimary = Color.white

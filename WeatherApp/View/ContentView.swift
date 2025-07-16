@@ -11,12 +11,13 @@ struct ContentView: View {
     @EnvironmentObject var weatherManager: WeatherManager
     @State private var showingSearch = false
     @State private var showingCitiesList = false
+    @State private var showingSettings = false
     @State private var initialLoadCompleted = false
     
     var body: some View {
         ZStack {
             if let weather = weatherManager.currentWeather {
-                HomeView(weather: weather, topEdge: 0)
+                HomeView(topEdge: 0)
                     .environmentObject(weatherManager)
             } else if weatherManager.isLoading {
                 LoadingView()
@@ -27,36 +28,48 @@ struct ContentView: View {
             }
             
             if weatherManager.currentWeather != nil {
-                VStack {
-                    HStack {
-                        Button(action: { showingCitiesList.toggle() }) {
-                            HStack {
-                                Image(systemName: "list.bullet")
-                                Text(StringManager.myCities)
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(ColorManager.buttonBackground)
-                            .clipShape(Capsule())
-                        }
-                        .padding(.leading)
-                        
+                           VStack {
+                               HStack {
+                                   Button(action: { showingCitiesList.toggle() }) {
+                                        Image(systemName: "list.bullet")
+                                                .padding(10)
+                                                .background(ColorManager.buttonBackground)
+                                                .foregroundColor(ColorManager.buttonIconColor)
+                                                .clipShape(Circle())
+                                                .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
+                                }
+                                                .padding(.leading)
+                                                          
                         Spacer()
-                        
-                        Button(action: { showingSearch.toggle() }) {
-                            Image(systemName: "magnifyingglass")
-                                .padding(10)
-                                .background(ColorManager.buttonBackground)
-                                .clipShape(Circle())
-                        }
-                        .padding(.trailing)
-                    }
-                    .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
-                    
-                    Spacer()
+                                   
+                                   HStack(spacing: 10) {
+                                       Button(action: { showingSettings.toggle() }) {
+                                           Image(systemName: "gearshape")
+                                               .padding(10)
+                                               .background(ColorManager.buttonBackground)
+                                               .foregroundColor(ColorManager.buttonIconColor)
+                                               .clipShape(Circle())
+                                       }
+                                       
+                                       Button(action: { showingSearch.toggle() }) {
+                                           Image(systemName: "magnifyingglass")
+                                               .padding(10)
+                                               .background(ColorManager.buttonBackground)
+                                               .foregroundColor(ColorManager.buttonIconColor)
+                                               .clipShape(Circle())
+                                       }
+                                   }
+                                   .padding(.trailing)
+                               }
+                               .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0)
+                               
+                               Spacer()
+                           }
+                       }
+                   }
+        .sheet(isPresented: $showingSettings) {
+                    SettingsView()
                 }
-            }
-        }
         .sheet(isPresented: $showingSearch) {
             SearchView(weatherManager: weatherManager)
                 .environmentObject(weatherManager)

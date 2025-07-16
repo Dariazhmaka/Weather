@@ -8,75 +8,93 @@
 import SwiftUI
 
 struct HomeView: View {
-    var weather: WeatherDataModel
+    @EnvironmentObject var weatherManager: WeatherManager
     var topEdge: CGFloat
     @State private var selectedDate = Date()
-    @EnvironmentObject private var weatherManager: WeatherManager
     @State private var offset: CGFloat = 0
     @State private var showEffect = false
     @State private var isRefreshing = false
     
-    private var effectType: WeatherEffectType {
-        WeatherEffectManager.effectType(for: selectedDayWeatherCondition)
+    @AppStorage("showSunset") private var showSunset = true
+    @AppStorage("showHumidity") private var showHumidity = true
+    @AppStorage("showFeelsLike") private var showFeelsLike = true
+    @AppStorage("showPressure") private var showPressure = true
+    @AppStorage("showWind") private var showWind = true
+    
+    private var weather: WeatherDataModel? {
+        weatherManager.currentWeather
     }
     
-    private var selectedDayWeatherCondition: String {
+    private var effectType: WeatherEffectType? {
+        guard let condition = selectedDayWeatherCondition else { return nil }
+        return WeatherEffectManager.effectType(for: condition)
+    }
+    
+    private var selectedDayWeatherCondition: String? {
+        guard let weather = weather else { return nil }
+        
         if let selectedDay = weather.dailyForecast.first(where: { Calendar.current.isDate($0.date, inSameDayAs: selectedDate) }) {
             return selectedDay.icon
         }
         return weather.condition
     }
     
-    private let dayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
-        formatter.dateFormat = "E"
-        return formatter
-    }()
-    
     var body: some View {
         ZStack {
-            weatherBackground
-                .ignoresSafeArea()
-            
-            WeatherEffectView(effectType: effectType, size: UIScreen.main.bounds.size)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .opacity(showEffect ? 1 : 0)
-                .ignoresSafeArea()
-            
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 20) {
-                    headerSection
-                        .padding(.top, 50 + topEdge)
-                    
-                    weatherSummaryCard
-                    
-                    if !weather.hourlyForecast.isEmpty {
-                        hourlyForecastSection
+            if let weather = weather {
+                weatherBackground
+                    .ignoresSafeArea()
+                
+                if let effectType = effectType {
+                    WeatherEffectView(effectType: effectType, size: UIScreen.main.bounds.size)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .opacity(showEffect ? 1 : 0)
+                        .ignoresSafeArea()
+                }
+                
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 20) {
+                        headerSection
+                            .padding(.top, 50 + topEdge)
+                        
+                        if showSunset, let sunrise = weather.sunrise, let sunset = weather.sunset {
+                            weatherSummaryCard(sunrise: sunrise, sunset: sunset)
+                        }
+                        
+                        if !weather.hourlyForecast.isEmpty {
+                            hourlyForecastSection
+                        }
+                        
+                        if showHumidity || showWind || showPressure || showFeelsLike {
+                            weatherDetailsSection
+                        }
+                        
+                        if !weather.dailyForecast.isEmpty {
+                            weeklyForecastSection
+                        }
                     }
-                    
-                    weatherDetailsSection
-                    
-                    if !weather.dailyForecast.isEmpty {
-                        weeklyForecastSection
+                    .padding(.horizontal)
+                    .padding(.bottom, 30)
+                }
+                .coordinateSpace(name: "SCROLL")
+                .overlay {
+                    if isRefreshing {
+                        RefreshIndicator()
+                            .transition(.opacity)
                     }
                 }
-                .padding(.horizontal)
-                .padding(.bottom, 30)
-            }
-            .coordinateSpace(name: "SCROLL")
-            .overlay {
-                if isRefreshing {
-                    RefreshIndicator()
-                        .transition(.opacity)
-                }
+            } else if weatherManager.isLoading {
+                LoadingView()
+            } else if let error = weatherManager.error {
+                ErrorView(error: error, retryAction: retryLoading)
+            } else {
+                welcomeView
             }
         }
         .onAppear {
             selectedDate = Date()
-            if !weatherManager.isForecastLoaded && weather.hourlyForecast.isEmpty {
-                weatherManager.fetchForecast(latitude: weather.latitude, longitude: weather.longitude) { _ in
-                }
+            if let weather = weather, !weatherManager.isForecastLoaded && weather.hourlyForecast.isEmpty {
+                weatherManager.fetchForecast(latitude: weather.latitude, longitude: weather.longitude) { _ in }
             }
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -85,44 +103,49 @@ struct HomeView: View {
                 }
             }
         }
-        .onChange(of: weatherManager.isLoading) { newValue in
-            withAnimation {
-                isRefreshing = newValue
-            }
+        .onChange(of: weatherManager.currentWeather?.city) { _ in
+            selectedDate = Date()
         }
     }
-        
+    
     private var weatherBackground: some View {
         Group {
-            switch effectType {
-            case .rain, .thunderstorm:
-                LinearGradient(colors: [
-                    ColorManager.rainBackgroundTop,
-                    ColorManager.rainBackgroundBottom
-                ], startPoint: .top, endPoint: .bottom)
-                
-            case .snow:
-                LinearGradient(colors: [
-                    ColorManager.snowBackgroundTop,
-                    ColorManager.snowBackgroundBottom
-                ], startPoint: .top, endPoint: .bottom)
-                
-            case .sun:
-                AngularGradient(
-                    gradient: Gradient(colors: [
-                        ColorManager.sunBackgroundTop,
-                        ColorManager.sunBackgroundBottom
-                    ]),
-                    center: .topLeading,
-                    angle: .degrees(45)
-                )
-            case .clouds, .fog:
-                LinearGradient(colors: [
-                    ColorManager.cloudsBackgroundTop,
-                    ColorManager.cloudsBackgroundBottom
-                ], startPoint: .top, endPoint: .bottom)
-                
-            default:
+            if let effectType = effectType {
+                switch effectType {
+                case .rain, .thunderstorm:
+                    LinearGradient(colors: [
+                        ColorManager.rainBackgroundTop,
+                        ColorManager.rainBackgroundBottom
+                    ], startPoint: .top, endPoint: .bottom)
+                    
+                case .snow:
+                    LinearGradient(colors: [
+                        ColorManager.snowBackgroundTop,
+                        ColorManager.snowBackgroundBottom
+                    ], startPoint: .top, endPoint: .bottom)
+                    
+                case .sun:
+                    AngularGradient(
+                        gradient: Gradient(colors: [
+                            ColorManager.sunBackgroundTop,
+                            ColorManager.sunBackgroundBottom
+                        ]),
+                        center: .topLeading,
+                        angle: .degrees(45)
+                    )
+                case .clouds, .fog:
+                    LinearGradient(colors: [
+                        ColorManager.cloudsBackgroundTop,
+                        ColorManager.cloudsBackgroundBottom
+                    ], startPoint: .top, endPoint: .bottom)
+                    
+                case .none:
+                    LinearGradient(colors: [
+                        ColorManager.defaultBackgroundTop,
+                        ColorManager.defaultBackgroundBottom
+                    ], startPoint: .topLeading, endPoint: .bottomTrailing)
+                }
+            } else {
                 LinearGradient(colors: [
                     ColorManager.defaultBackgroundTop,
                     ColorManager.defaultBackgroundBottom
@@ -134,57 +157,57 @@ struct HomeView: View {
     
     private var headerSection: some View {
         VStack(spacing: 5) {
-            Text(weather.city)
-                .font(.system(size: 32, weight: .semibold, design: .rounded))
-                .foregroundColor(ColorManager.textPrimary)
-                .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
-                .opacity(getTitleOpacity)
-            
-            Text("\(Int(weather.temperature))°")
-                .font(.system(size: 72, weight: .thin))
-                .foregroundColor(ColorManager.textPrimary)
-                .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
-                .opacity(getTempOpacity)
-                .padding(.top, -10)
-            
-            Text(weather.condition.localizedCapitalized)
-                .font(.system(size: 20, weight: .medium, design: .rounded))
+            if let weather = weather {
+                Text(weather.city)
+                    .font(.system(size: 32, weight: .semibold, design: .rounded))
+                    .foregroundColor(ColorManager.textPrimary)
+                    .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
+                    .opacity(getTitleOpacity)
+                
+                Text("\(Int(weather.temperature))°")
+                    .font(.system(size: 72, weight: .thin))
+                    .foregroundColor(ColorManager.textPrimary)
+                    .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
+                    .opacity(getTempOpacity)
+                    .padding(.top, -10)
+                
+                Text(weather.condition.localizedCapitalized)
+                    .font(.system(size: 20, weight: .medium, design: .rounded))
+                    .foregroundColor(ColorManager.textSecondary)
+                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    .opacity(getConditionOpacity)
+                
+                HStack(spacing: 16) {
+                    Text("\(StringManager.maxTemp): \(Int(weather.highTemp))°")
+                    Text("\(StringManager.minTemp): \(Int(weather.lowTemp))°")
+                }
+                .font(.system(size: 16, weight: .medium, design: .rounded))
                 .foregroundColor(ColorManager.textSecondary)
-                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                .opacity(getConditionOpacity)
-            
-            HStack(spacing: 16) {
-                Text("\(StringManager.maxTemp): \(Int(weather.highTemp))°")
-                Text("\(StringManager.minTemp): \(Int(weather.lowTemp))°")
+                .opacity(getHighLowOpacity)
             }
-            .font(.system(size: 16, weight: .medium, design: .rounded))
-            .foregroundColor(ColorManager.textSecondary)
-            .opacity(getHighLowOpacity)
         }
         .offset(y: -offset)
         .offset(y: offset > 0 ? (offset / UIScreen.main.bounds.width) * 100 : 0)
         .offset(y: getTitleOffset())
     }
     
-    private var weatherSummaryCard: some View {
+    private func weatherSummaryCard(sunrise: Date, sunset: Date) -> some View {
         VStack(spacing: 16) {
             Divider()
                 .background(ColorManager.dividerColor)
             
-            if let sunrise = weather.sunrise, let sunset = weather.sunset {
-                HStack {
-                    Image(systemName: "sunrise.fill")
-                        .symbolRenderingMode(.multicolor)
-                    Text(formatTime(sunrise))
-                    Spacer()
-                    Image(systemName: "sunset.fill")
-                        .symbolRenderingMode(.multicolor)
-                    Text(formatTime(sunset))
-                }
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(ColorManager.textSecondary)
-                .padding(.horizontal)
+            HStack {
+                Image(systemName: "sunrise.fill")
+                    .symbolRenderingMode(.multicolor)
+                Text(formatTime(sunrise))
+                Spacer()
+                Image(systemName: "sunset.fill")
+                    .symbolRenderingMode(.multicolor)
+                Text(formatTime(sunset))
             }
+            .font(.system(size: 14, weight: .medium))
+            .foregroundColor(ColorManager.textSecondary)
+            .padding(.horizontal)
         }
         .padding(.vertical, 16)
         .background(
@@ -248,33 +271,39 @@ struct HomeView: View {
             .foregroundColor(ColorManager.textPrimary)
             
             HStack(spacing: 16) {
-                WeatherDetailItem(
-                    icon: "humidity",
-                    value: StringManager.humidityString(weather.humidity),
-                    label: StringManager.humidity
-                )
-                
-                WeatherDetailItem(
-                    icon: "wind",
-                    value: StringManager.windSpeedString(weather.windSpeed),
-                    label: StringManager.wind
-                )
-                
-                WeatherDetailItem(
-                    icon: "thermometer",
-                    value: StringManager.pressureString(weather.pressure ?? 1012),
-                    label: StringManager.pressure
-                )
-            }
-            
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                if let feelsLike = weather.feelsLike {
-                    WeatherDetailCard(
-                        icon: "thermometer.sun.fill",
-                        title: StringManager.feelsLike,
-                        value: StringManager.temperatureString(feelsLike)
+                if showHumidity, let weather = weather {
+                    WeatherDetailItem(
+                        icon: "humidity",
+                        value: StringManager.humidityString(weather.humidity),
+                        label: StringManager.humidity
                     )
                 }
+                
+                if showWind, let weather = weather {
+                    WeatherDetailItem(
+                        icon: "wind",
+                        value: StringManager.windSpeedString(weather.windSpeed),
+                        label: StringManager.wind
+                    )
+                }
+                
+                if showPressure, let weather = weather {
+                    WeatherDetailItem(
+                        icon: "thermometer",
+                        value: StringManager.pressureString(weather.pressure ?? 1012),
+                        label: StringManager.pressure
+                    )
+                }
+            }
+            .frame(maxWidth: .infinity)
+            
+            if showFeelsLike, let weather = weather, let feelsLike = weather.feelsLike {
+                WeatherDetailCard(
+                    icon: "thermometer.sun.fill",
+                    title: StringManager.feelsLike,
+                    value: StringManager.temperatureString(feelsLike)
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(16)
@@ -292,17 +321,22 @@ struct HomeView: View {
             .foregroundColor(ColorManager.textSecondary)
             
             VStack(spacing: 12) {
-                ForEach(weather.dailyForecast.prefix(7)) { day in
-                    DailyForecastRow(day: day, isSelected: Calendar.current.isDate(day.date, inSameDayAs: selectedDate))
+                if let weather = weather {
+                    ForEach(weather.dailyForecast.prefix(7)) { day in
+                        DailyForecastRow(
+                            day: day,
+                            isSelected: Calendar.current.isDate(day.date, inSameDayAs: selectedDate)
+                        )
                         .onTapGesture {
                             withAnimation(.spring()) {
                                 selectedDate = day.date
                             }
                         }
-                    
-                    if day.id != weather.dailyForecast.prefix(7).last?.id {
-                        Divider()
-                            .background(ColorManager.dividerColor)
+                        
+                        if day.id != weather.dailyForecast.prefix(7).last?.id {
+                            Divider()
+                                .background(ColorManager.dividerColor)
+                        }
                     }
                 }
             }
@@ -329,6 +363,8 @@ struct HomeView: View {
     }
     
     private var filteredHourlyData: [HourlyForecastModel] {
+        guard let weather = weather else { return [] }
+        
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: selectedDate)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
@@ -359,6 +395,27 @@ struct HomeView: View {
     private var getHighLowOpacity: Double {
         let progress = -offset / 100
         return Double(1 - progress)
+    }
+    
+    private var welcomeView: some View {
+        VStack {
+            Text(StringManager.welcomeTitle)
+                .font(.title)
+            
+            Button(StringManager.getWeather, action: loadInitialData)
+                .buttonStyle(.borderedProminent)
+                .padding(.top, 20)
+        }
+        .foregroundColor(ColorManager.textPrimary)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private func loadInitialData() {
+        weatherManager.fetchWeather(for: "Москва")
+    }
+    
+    private func retryLoading() {
+        weatherManager.fetchWeather(for: "Москва")
     }
 }
 
@@ -562,8 +619,11 @@ struct HomeView_Previews: PreviewProvider {
             ]
         )
         
-        HomeView(weather: sampleWeather, topEdge: 0)
+        let weatherManager = WeatherManager()
+        weatherManager.currentWeather = sampleWeather
+        
+        return HomeView(topEdge: 0)
             .preferredColorScheme(.dark)
-            .environmentObject(WeatherManager())
+            .environmentObject(weatherManager)
     }
 }

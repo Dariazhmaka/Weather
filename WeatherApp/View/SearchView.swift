@@ -27,23 +27,23 @@ struct SearchView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 15) {
-                SearchBar(text: $searchText, placeholder: "Выбрать город")
+                SearchBar(text: $searchText, placeholder: StringManager.selectCity)
                     .padding(.horizontal)
                 
                 Button(action: useCurrentLocation) {
                     HStack {
                         Image(systemName: "location.fill")
-                        Text("Мое местоположение")
+                        Text(StringManager.myLocation)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.blue.opacity(0.2))
+                    .background(ColorManager.buttonBackground)
                     .cornerRadius(10)
                 }
                 .padding(.horizontal)
                 
                 VStack(spacing: 10) {
-                    Text("Выбор по координитам:")
+                    Text(StringManager.selectByCoordinates)
                         .font(.caption)
                     
                     HStack {
@@ -58,7 +58,7 @@ struct SearchView: View {
                     .padding(.horizontal)
                     
                     Button(action: searchByCoordinates) {
-                        Text("выбор по координатам")
+                        Text(StringManager.selectByCoordinatesButton)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Color.blue)
@@ -70,7 +70,7 @@ struct SearchView: View {
                 }
                 
                 List {
-                    Section(header: Text("Популярные города")) {
+                    Section(header: Text(StringManager.popularCities)) {
                         ForEach(filteredCities, id: \.self) { city in
                             Button(action: { searchByCity(city) }) {
                                 Text(city)
@@ -84,7 +84,7 @@ struct SearchView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Закрыть") {
+                    Button(StringManager.close) {
                         presentationMode.wrappedValue.dismiss()
                     }
                 }
