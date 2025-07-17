@@ -41,34 +41,7 @@ struct SearchView: View {
                     .cornerRadius(10)
                 }
                 .padding(.horizontal)
-                
-                VStack(spacing: 10) {
-                    Text(StringManager.selectByCoordinates)
-                        .font(.caption)
-                    
-                    HStack {
-                        TextField("Latitude", text: $latitude)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .keyboardType(.numbersAndPunctuation)
-                        
-                        TextField("Longitude", text: $longitude)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .keyboardType(.numbersAndPunctuation)
-                    }
-                    .padding(.horizontal)
-                    
-                    Button(action: searchByCoordinates) {
-                        Text(StringManager.selectByCoordinatesButton)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
-                    .padding(.horizontal)
-                    .disabled(latitude.isEmpty || longitude.isEmpty)
-                }
-                
+                   
                 List {
                     Section(header: Text(StringManager.popularCities)) {
                         ForEach(filteredCities, id: \.self) { city in
@@ -102,12 +75,6 @@ struct SearchView: View {
         presentationMode.wrappedValue.dismiss()
     }
     
-    private func searchByCoordinates() {
-        if let lat = Double(latitude), let lon = Double(longitude) {
-            weatherManager.fetchWeather(for: "\(lat),\(lon)")
-            presentationMode.wrappedValue.dismiss()
-        }
-    }
     
     struct SearchBar: UIViewRepresentable {
         @Binding var text: String

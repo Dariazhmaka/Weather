@@ -199,10 +199,12 @@ struct HomeView: View {
             HStack {
                 Image(systemName: "sunrise.fill")
                     .symbolRenderingMode(.multicolor)
+                Text(StringManager.sunrise)
                 Text(formatTime(sunrise))
                 Spacer()
                 Image(systemName: "sunset.fill")
                     .symbolRenderingMode(.multicolor)
+                Text(StringManager.sunset)
                 Text(formatTime(sunset))
             }
             .font(.system(size: 14, weight: .medium))

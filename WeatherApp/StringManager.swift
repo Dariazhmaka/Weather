@@ -44,6 +44,8 @@ struct StringManager {
     static let feelsLike = "Ощущается"
     static let maxTemp = "Макс"
     static let minTemp = "Мин"
+    static let sunrise = "Восход"
+    static let sunset = "Закат"
     
     // Units
     static let metersPerSecond = "м/с"
