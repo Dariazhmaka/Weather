@@ -20,7 +20,7 @@ class WeatherManager: ObservableObject {
     public let locationService = LocationService()
     private var cancellables = Set<AnyCancellable>()
     private let citiesKey = "savedCities"
-        
+    
     init() {
         loadCities()
         setupLocationUpdates()
@@ -33,7 +33,7 @@ class WeatherManager: ObservableObject {
             currentCity = savedCities.first
         }
     }
-        
+    
     func addCity(_ city: SavedCity) {
         let cityExists = savedCities.contains { savedCity in
             savedCity.name.lowercased() == city.name.lowercased()
@@ -44,7 +44,7 @@ class WeatherManager: ObservableObject {
             saveCities()
         }
     }
-
+    
     func removeCity(at offsets: IndexSet) {
         savedCities.remove(atOffsets: offsets)
         saveCities()
@@ -55,7 +55,7 @@ class WeatherManager: ObservableObject {
             }
         }
     }
-
+    
     private func saveCities() {
         if let data = try? JSONEncoder().encode(savedCities) {
             UserDefaults.standard.set(data, forKey: citiesKey)
@@ -84,9 +84,11 @@ class WeatherManager: ObservableObject {
         currentCity = city
         loadWeatherForCurrentCity()
     }
-     
+    
     private func loadWeatherForCurrentCity() {
-        guard let city = currentCity else { return }
+        guard let city = currentCity else {
+            return
+        }
         
         isLoading = true
         error = nil
@@ -125,7 +127,7 @@ class WeatherManager: ObservableObject {
             self?.isLoading = false
         }
     }
-     
+    
     func fetchWeather(for cityName: String) {
         isLoading = true
         error = nil
@@ -154,9 +156,59 @@ class WeatherManager: ObservableObject {
         locationService.$currentLocation
             .compactMap { $0 }
             .sink { [weak self] location in
-                let cityName = "\(location.coordinate.latitude),\(location.coordinate.longitude)"
-                self?.fetchWeather(for: cityName)
+                self?.fetchWeather(for: location.coordinate.latitude, longitude: location.coordinate.longitude)
             }
             .store(in: &cancellables)
+        
+        locationService.$locationError
+            .compactMap { $0 }
+            .sink { [weak self] error in
+                self?.error = error
+                self?.isLoading = false
+            }
+            .store(in: &cancellables)
+    }
+    
+    func fetchWeather(for latitude: Double, longitude: Double) {
+        isLoading = true
+        error = nil
+        
+        let cityName = "\(latitude),\(longitude)"
+        let city = SavedCity(name: cityName, latitude: latitude, longitude: longitude)
+        currentCity = city
+        
+        let group = DispatchGroup()
+        
+        group.enter()
+        apiService.fetchWeather(latitude: latitude, longitude: longitude) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let weatherData):
+                    self?.currentWeather = weatherData
+                case .failure(let error):
+                    self?.error = error
+                }
+                group.leave()
+            }
+        }
+        
+        group.enter()
+        apiService.fetchForecast(latitude: latitude, longitude: longitude) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let forecastData):
+                    self?.currentWeather?.hourlyForecast = forecastData.hourly
+                    self?.currentWeather?.dailyForecast = forecastData.daily
+                    self?.isForecastLoaded = true
+                case .failure(let error):
+                    self?.error = error
+                }
+                group.leave()
+            }
+        }
+        
+        group.notify(queue: .main) { [weak self] in
+            self?.isLoading = false
+        }
     }
 }

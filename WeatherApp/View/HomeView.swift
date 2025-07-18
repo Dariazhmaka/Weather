@@ -192,26 +192,42 @@ struct HomeView: View {
     }
     
     private func weatherSummaryCard(sunrise: Date, sunset: Date) -> some View {
-        VStack(spacing: 16) {
-            Divider()
-                .background(ColorManager.dividerColor)
-            
+        VStack(spacing: 8) {
             HStack {
-                Image(systemName: "sunrise.fill")
-                    .symbolRenderingMode(.multicolor)
-                Text(StringManager.sunrise)
-                Text(formatTime(sunrise))
+                HStack {
+                    Image(systemName: "sunrise.fill")
+                        .symbolRenderingMode(.multicolor)
+                    Text(StringManager.sunrise)
+                }
+                
                 Spacer()
-                Image(systemName: "sunset.fill")
-                    .symbolRenderingMode(.multicolor)
-                Text(StringManager.sunset)
-                Text(formatTime(sunset))
+                
+                HStack {
+                    Image(systemName: "sunset.fill")
+                        .symbolRenderingMode(.multicolor)
+                    Text(StringManager.sunset)
+                }
             }
             .font(.system(size: 14, weight: .medium))
             .foregroundColor(ColorManager.textSecondary)
             .padding(.horizontal)
+            
+            Divider()
+                .background(ColorManager.dividerColor)
+            
+            HStack {
+                Text(formatTime(sunrise))
+                    .font(.system(size: 16, weight: .medium))
+                
+                Spacer()
+                
+                Text(formatTime(sunset))
+                    .font(.system(size: 16, weight: .medium))
+            }
+            .foregroundColor(ColorManager.textPrimary)
+            .padding(.horizontal)
         }
-        .padding(.vertical, 16)
+        .padding(.vertical, 12)
         .background(
             .ultraThinMaterial,
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -452,7 +468,7 @@ struct DailyForecastRow: View {
     private let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ru_RU")
-        formatter.dateFormat = "EEEE"
+        formatter.dateFormat = "E"
         return formatter
     }()
     
@@ -595,37 +611,3 @@ struct RefreshIndicator: View {
     }
 }
 
-struct HomeView_Previews: PreviewProvider {
-    static var previews: some View {
-        let sampleWeather = WeatherDataModel(
-            city: "Москва",
-            temperature: 23,
-            highTemp: 26,
-            lowTemp: 18,
-            condition: "Cloudy",
-            humidity: 65,
-            windSpeed: 3.2,
-            latitude: 55.7558,
-            longitude: 37.6176,
-            sunrise: Calendar.current.date(bySettingHour: 5, minute: 30, second: 0, of: Date())!,
-            sunset: Calendar.current.date(bySettingHour: 20, minute: 45, second: 0, of: Date())!,
-            hourlyForecast: [
-                HourlyForecastModel(time: "Сейчас", timeDate: Date(), temp: 23, icon: "cloud.sun.fill"),
-                HourlyForecastModel(time: "12:00", timeDate: Date().addingTimeInterval(3600), temp: 24, icon: "sun.max.fill"),
-                HourlyForecastModel(time: "15:00", timeDate: Date().addingTimeInterval(7200), temp: 25, icon: "sun.max.fill")
-            ],
-            dailyForecast: [
-                DailyForecastModel(date: Date(), highTemp: 26, lowTemp: 18, icon: "cloud.sun.fill"),
-                DailyForecastModel(date: Date().addingTimeInterval(86400), highTemp: 28, lowTemp: 20, icon: "sun.max.fill"),
-                DailyForecastModel(date: Date().addingTimeInterval(172800), highTemp: 24, lowTemp: 17, icon: "cloud.rain.fill")
-            ]
-        )
-        
-        let weatherManager = WeatherManager()
-        weatherManager.currentWeather = sampleWeather
-        
-        return HomeView(topEdge: 0)
-            .preferredColorScheme(.dark)
-            .environmentObject(weatherManager)
-    }
-}

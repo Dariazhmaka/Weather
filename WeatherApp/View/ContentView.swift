@@ -16,7 +16,7 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            if let weather = weatherManager.currentWeather {
+            if weatherManager.currentWeather != nil {
                 HomeView(topEdge: 0)
                     .environmentObject(weatherManager)
             } else if weatherManager.isLoading {
